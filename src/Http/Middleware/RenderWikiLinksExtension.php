@@ -37,8 +37,9 @@ use Plugins\G7\Light\Wiki\Support\WikiUrl;
  * ## 조회 횟수
  *
  * 본문에 표기가 있으면 슬러그→게시판 ID 1회, 제목 일괄 조회 1회(표기가 몇 개든 1회다).
- * 자리표시가 있으면 **치환되는 자리표시 하나당 목록 조회 1회**가 더 붙는다
- * (`[[#둘러보기]]` 는 두 단을 채우므로 2회). 같은 자리표시를 여러 번 쓰면 그만큼 는다.
+ * 자리표시가 있으면 **종류(와 개수)마다 목록 조회 1회**가 더 붙는다. 같은 자리표시를 한
+ * 문서에 여러 번 써도 조회는 한 번이고(랜덤만 예외 — 매번 다시 뽑는다),
+ * `[[#둘러보기]]` 는 두 단을 채우므로 2회다.
  * 자리표시가 없는 문서에는 렌더러를 만들지 않으므로 읽기 권한 판정도 돌지 않는다.
  *
  * ## 어느 글에서 자리표시가 채워지는가
@@ -198,12 +199,28 @@ class RenderWikiLinksExtension
      */
     private function placeholderRenderer(Request $request, string $slug, int $boardId, array $exclude): FrontPlaceholderRenderer
     {
+        // 같은 자리표시를 한 문서에 두 번 쓰면 조회도 두 번 돈다. 결과가 정해져 있는 것
+        // (최근수정·최근작성·색인)은 개수별로 한 번만 조회한다. 색인은 최대 2000행이라
+        // 두 번 도는 비용이 특히 크다.
+        //
+        // 랜덤은 **일부러 캐시하지 않는다** — 한 문서에 랜덤을 두 번 쓰면 서로 다른 문서가
+        // 나오는 편이 자연스럽다.
+        $recentMemo = [];
+        $createdMemo = [];
+        $indexMemo = null;
+
         return new FrontPlaceholderRenderer(
             $slug,
             WikiGate::canRead($slug, $request->user()),
-            static fn (int $limit): array => WikiDocQuery::recent($boardId, $exclude, $limit),
-            static fn (int $limit): array => WikiDocQuery::recentCreated($boardId, $exclude, $limit),
-            static fn (): array => WikiDocQuery::forIndex($boardId, $exclude),
+            function (int $limit) use ($boardId, $exclude, &$recentMemo): array {
+                return $recentMemo[$limit] ??= WikiDocQuery::recent($boardId, $exclude, $limit);
+            },
+            function (int $limit) use ($boardId, $exclude, &$createdMemo): array {
+                return $createdMemo[$limit] ??= WikiDocQuery::recentCreated($boardId, $exclude, $limit);
+            },
+            function () use ($boardId, $exclude, &$indexMemo): array {
+                return $indexMemo ??= WikiDocQuery::forIndex($boardId, $exclude);
+            },
             static fn (): ?int => WikiDocQuery::randomPostId($boardId, $exclude),
             static fn (int $limit): array => WikiDocQuery::randomDocs($boardId, $exclude, $limit),
             self::labels(),

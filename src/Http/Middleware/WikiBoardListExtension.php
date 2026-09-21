@@ -110,18 +110,28 @@ class WikiBoardListExtension
             return $response;
         }
 
-        $postIds = $this->targetIds($request, $boardId, $slug);
+        $target = $this->targetIds($request, $boardId, $slug);
 
-        if ($postIds === null) {
+        if ($target === null) {
             return $response;
         }
+
+        $postIds = $target['ids'];
 
         // 코어 simplePaginate 와 같은 방식: 한 개 더 떠서 "다음 쪽이 있는가" 를 판정한다.
         $window = array_slice($postIds, ($page - 1) * $perPage, $perPage + 1);
         $posts = WikiPostLoader::load($boardId, $window);
 
+        // 상한에 걸려 잘렸으면 총 건수를 "정확히 N" 이라고 말하지 않는다 — 코어가
+        // `BoundedCount` 로 정확도를 함께 나르는 이유가 그것이다.
+        $total = new BoundedCount(
+            count($postIds),
+            $target['truncated'] ? TotalRelation::AtLeast : TotalRelation::Exact,
+            $target['truncated'] ? self::MAX_DOCS : null,
+        );
+
         $collection = new PostCollection(new Paginator($posts, $perPage, $page));
-        $collection->setTotalNormalPosts(new BoundedCount(count($postIds), TotalRelation::Exact, null));
+        $collection->setTotalNormalPosts($total);
         $collection->setOrderDirection('asc');
 
         $built = $collection->toArray($request);
@@ -143,7 +153,7 @@ class WikiBoardListExtension
      * `null` 은 "원본 응답을 그대로 두라" 는 뜻이다 — 대문이 지정되지 않았거나,
      * 검색어가 정규화 후 빈 문자열이 되는 경우다(빈 검색어로 전부 훑지 않는다).
      *
-     * @return list<int>|null
+     * @return array{ids: list<int>, truncated: bool}|null
      */
     private function targetIds(Request $request, int $boardId, string $slug): ?array
     {
@@ -157,7 +167,10 @@ class WikiBoardListExtension
                 return null;
             }
 
-            return WikiDocQuery::visiblePostIds($slug, [$frontPostId]);
+            return [
+                'ids' => WikiDocQuery::visiblePostIds($slug, [$frontPostId]),
+                'truncated' => false,
+            ];
         }
 
         $normalized = TitleNormalizer::normalize($search);
@@ -166,10 +179,12 @@ class WikiBoardListExtension
             return null;
         }
 
-        return WikiDocQuery::visiblePostIds(
-            $slug,
-            WikiDocQuery::searchPostIds($boardId, $normalized, self::MAX_DOCS)
-        );
+        $found = WikiDocQuery::searchPostIds($boardId, $normalized, self::MAX_DOCS);
+
+        return [
+            'ids' => WikiDocQuery::visiblePostIds($slug, $found),
+            'truncated' => count($found) >= self::MAX_DOCS,
+        ];
     }
 
     /**
