@@ -28,6 +28,15 @@ final class WikiDocQuery
 
     public const RECENT_MAX = 50;
 
+    /** 최근작성 자리표시의 기본 개수 (최대는 RECENT_MAX 와 같다) */
+    public const CREATED_DEFAULT = 5;
+
+    /** 랜덤 목록(`[[#랜덤|N]]`, N>=2)의 최대 개수 */
+    public const RANDOM_MAX = 50;
+
+    /** 둘러보기 각 단의 기본 개수 */
+    public const TOUR_DEFAULT = 5;
+
     /**
      * 정규화 제목 → 문서. 표기 여러 개를 **조회 1회**로 판정한다.
      *
@@ -58,32 +67,51 @@ final class WikiDocQuery
     /**
      * 최근 수정 목록.
      *
+     * @param  list<int>  $exclude  후보에서 뺄 글 ID (대문 글·자리표시가 실린 그 문서 자신)
      * @return list<array{post_id: int, title: string}>
      */
-    public static function recent(int $boardId, ?int $frontPostId, int $limit): array
+    public static function recent(int $boardId, array $exclude, int $limit): array
     {
         $limit = max(1, min($limit, self::RECENT_MAX));
 
-        return self::candidates($boardId, $frontPostId)
-            ->orderByDesc('d.edited_at')
-            ->orderByDesc('d.post_id')
-            ->limit($limit)
-            ->get()
-            ->map(static fn ($row): array => [
-                'post_id' => (int) $row->post_id,
-                'title' => (string) $row->title,
-            ])
-            ->all();
+        return self::titleRows(
+            self::candidates($boardId, $exclude)
+                ->orderByDesc('d.edited_at')
+                ->orderByDesc('d.post_id')
+                ->limit($limit)
+        );
+    }
+
+    /**
+     * 최근 **작성** 목록 — 코어 글 표의 `created_at` 내림차순.
+     *
+     * 색인 표의 `edited_at` 은 마지막 **수정** 시각이라 작성 순서와 다르다. 작성일의 정본은
+     * 코어 `board_posts.created_at` 이고, 후보 조회가 이미 그 표를 조인하고 있어 추가 조회는 없다.
+     *
+     * @param  list<int>  $exclude  후보에서 뺄 글 ID
+     * @return list<array{post_id: int, title: string}>
+     */
+    public static function recentCreated(int $boardId, array $exclude, int $limit): array
+    {
+        $limit = max(1, min($limit, self::RECENT_MAX));
+
+        return self::titleRows(
+            self::candidates($boardId, $exclude)
+                ->orderByDesc('p.created_at')
+                ->orderByDesc('d.post_id')
+                ->limit($limit)
+        );
     }
 
     /**
      * 색인용 전체 문서 목록.
      *
+     * @param  list<int>  $exclude  후보에서 뺄 글 ID
      * @return list<array{id: int, title: string, title_norm: string}>
      */
-    public static function forIndex(int $boardId, ?int $frontPostId): array
+    public static function forIndex(int $boardId, array $exclude): array
     {
-        return self::candidates($boardId, $frontPostId)
+        return self::candidates($boardId, $exclude)
             ->orderBy('d.title_norm')
             ->limit(self::INDEX_LIMIT)
             ->get()
@@ -97,10 +125,12 @@ final class WikiDocQuery
 
     /**
      * 랜덤 문서 1건의 글 ID (후보가 없으면 null).
+     *
+     * @param  list<int>  $exclude  후보에서 뺄 글 ID
      */
-    public static function randomPostId(int $boardId, ?int $frontPostId): ?int
+    public static function randomPostId(int $boardId, array $exclude): ?int
     {
-        $row = self::candidates($boardId, $frontPostId)
+        $row = self::candidates($boardId, $exclude)
             ->inRandomOrder()
             ->limit(1)
             ->first();
@@ -109,9 +139,49 @@ final class WikiDocQuery
     }
 
     /**
-     * 후보 조회의 공통 뼈대 — 색인 표에 코어 글 표를 붙이고 제외 조건을 건다.
+     * 랜덤 문서 N 건 — 서로 다른 문서만 나온다(같은 행을 두 번 뽑지 않는다).
+     *
+     * 목록으로 보여 줄 것이라 제목이 필요하다. 그래서 ID 하나만 돌려주는
+     * {@see randomPostId()} 와 따로 둔다.
+     *
+     * @param  list<int>  $exclude  후보에서 뺄 글 ID
+     * @return list<array{post_id: int, title: string}>
      */
-    private static function candidates(int $boardId, ?int $frontPostId): Builder
+    public static function randomDocs(int $boardId, array $exclude, int $limit): array
+    {
+        $limit = max(1, min($limit, self::RANDOM_MAX));
+
+        return self::titleRows(
+            self::candidates($boardId, $exclude)
+                ->inRandomOrder()
+                ->limit($limit)
+        );
+    }
+
+    /**
+     * 조회 결과를 `{post_id, title}` 목록으로 옮긴다.
+     *
+     * @return list<array{post_id: int, title: string}>
+     */
+    private static function titleRows(Builder $query): array
+    {
+        return $query->get()
+            ->map(static fn ($row): array => [
+                'post_id' => (int) $row->post_id,
+                'title' => (string) $row->title,
+            ])
+            ->all();
+    }
+
+    /**
+     * 후보 조회의 공통 뼈대 — 색인 표에 코어 글 표를 붙이고 제외 조건을 건다.
+     *
+     * 제외 대상이 **목록**인 이유: 1.5단계부터 자리표시가 대문 아닌 문서에도 실리므로,
+     * 대문 글과 "자리표시가 실린 그 문서 자신" 을 함께 빼야 한다.
+     *
+     * @param  list<int>  $exclude  뺄 글 ID (0 이하와 중복은 알아서 걸러낸다)
+     */
+    private static function candidates(int $boardId, array $exclude): Builder
     {
         $docs = (new WikiDoc)->getTable();
         $posts = (new Post)->getTable();
@@ -123,10 +193,15 @@ final class WikiDocQuery
             ->where('p.status', 'published')
             ->where('p.is_secret', 0)
             ->whereNull('p.parent_id')
-            ->select(['d.post_id', 'd.title', 'd.title_norm', 'd.edited_at']);
+            ->select(['d.post_id', 'd.title', 'd.title_norm', 'd.edited_at', 'p.created_at']);
 
-        if ($frontPostId !== null) {
-            $query->where('d.post_id', '<>', $frontPostId);
+        $exclude = array_values(array_unique(array_filter(
+            array_map(static fn ($id): int => (int) $id, $exclude),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        if ($exclude !== []) {
+            $query->whereNotIn('d.post_id', $exclude);
         }
 
         return $query;

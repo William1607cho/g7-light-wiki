@@ -180,17 +180,33 @@ class RenderWikiLinksExtension
      */
     private function frontRenderer(Request $request, string $slug, int $boardId, int $frontPostId): FrontPlaceholderRenderer
     {
+        $exclude = [$frontPostId];
+
         return new FrontPlaceholderRenderer(
             $slug,
             WikiGate::canRead($slug, $request->user()),
-            static fn (int $limit): array => WikiDocQuery::recent($boardId, $frontPostId, $limit),
-            static fn (): array => WikiDocQuery::forIndex($boardId, $frontPostId),
-            static fn (): ?int => WikiDocQuery::randomPostId($boardId, $frontPostId),
-            [
-                'random' => (string) __('g7-light-wiki::messages.front.random'),
-                'other' => (string) __('g7-light-wiki::messages.front.other'),
-                'empty' => (string) __('g7-light-wiki::messages.front.empty'),
-            ],
+            static fn (int $limit): array => WikiDocQuery::recent($boardId, $exclude, $limit),
+            static fn (int $limit): array => WikiDocQuery::recentCreated($boardId, $exclude, $limit),
+            static fn (): array => WikiDocQuery::forIndex($boardId, $exclude),
+            static fn (): ?int => WikiDocQuery::randomPostId($boardId, $exclude),
+            static fn (int $limit): array => WikiDocQuery::randomDocs($boardId, $exclude, $limit),
+            self::labels(),
         );
+    }
+
+    /**
+     * 자리표시가 쓰는 언어 파일 문구.
+     *
+     * @return array{random: string, other: string, empty: string, tour_created: string, tour_random: string}
+     */
+    private static function labels(): array
+    {
+        return [
+            'random' => (string) __('g7-light-wiki::messages.front.random'),
+            'other' => (string) __('g7-light-wiki::messages.front.other'),
+            'empty' => (string) __('g7-light-wiki::messages.front.empty'),
+            'tour_created' => (string) __('g7-light-wiki::messages.front.tour_created'),
+            'tour_random' => (string) __('g7-light-wiki::messages.front.tour_random'),
+        ];
     }
 }

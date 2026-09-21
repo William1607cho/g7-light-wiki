@@ -10,11 +10,14 @@ namespace Plugins\G7\Light\Wiki\Support;
  *
  * ## 표기
  *
- * | 표기 | 종류 | 1단계 처리 |
+ * | 표기 | 종류 | 처리 |
  * |---|---|---|
  * | `[[문서명]]`, `[[문서명\|표시 글자]]` | `link` | 문서 링크로 바꾼다 |
- * | `[[#최근수정]]`, `[[#최근수정\|N]]`, `[[#랜덤]]`, `[[#색인]]` | `placeholder` | 대문 글에서만 치환, 그 밖에서는 원문 유지 |
+ * | `[[#최근수정]]`, `[[#최근작성]]`, `[[#랜덤]]`, `[[#색인]]`, `[[#둘러보기]]` (각각 `\|N` 가능) | `placeholder` | 위키 게시판의 HTML 모드 문서에서 치환한다 |
  * | `[[분류:…]]`, `[[연표:…]]` | `reserved` | 원문 그대로 둔다 (다음 단계 예약) |
+ *
+ * 1.5단계부터 자리표시는 **대문 글 전용이 아니다** — 같은 위키 게시판의 모든 HTML 모드
+ * 문서에서 치환된다. 이 클래스는 어차피 "어느 글인지" 를 모르고 문자열만 본다.
  *
  * 그 밖의 `[[…]]`(빈 이름, 대괄호가 더 든 것, 닫히지 않은 것)은 **토큰이 아니다** —
  * 원문 그대로 남는다. 여러 줄·여러 노드에 걸친 표기는 다루지 않는다.
@@ -33,9 +36,13 @@ final class WikiMarkupParser
     /** 자리표시 이름 (`#` 뒤) */
     public const PLACEHOLDER_RECENT = '최근수정';
 
+    public const PLACEHOLDER_RECENT_CREATED = '최근작성';
+
     public const PLACEHOLDER_RANDOM = '랜덤';
 
     public const PLACEHOLDER_INDEX = '색인';
+
+    public const PLACEHOLDER_TOUR = '둘러보기';
 
     /** 예약 접두어 */
     private const RESERVED_PREFIXES = ['분류:', '연표:'];
@@ -43,8 +50,10 @@ final class WikiMarkupParser
     /** 알려진 자리표시 이름 */
     private const PLACEHOLDERS = [
         self::PLACEHOLDER_RECENT,
+        self::PLACEHOLDER_RECENT_CREATED,
         self::PLACEHOLDER_RANDOM,
         self::PLACEHOLDER_INDEX,
+        self::PLACEHOLDER_TOUR,
     ];
 
     /**

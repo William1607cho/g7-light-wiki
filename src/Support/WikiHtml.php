@@ -76,11 +76,91 @@ final class WikiHtml
      */
     public static function recentList(string $slug, array $items, string $emptyLabel): string
     {
+        return self::docList($slug, $items, $emptyLabel, 'g7lw-recent');
+    }
+
+    /**
+     * 최근 작성 목록 — 만드는 방식은 최근 수정과 같고 감싸개 class 만 다르다.
+     *
+     * @param  list<array{post_id: int, title: string}>  $items
+     */
+    public static function createdList(string $slug, array $items, string $emptyLabel): string
+    {
+        return self::docList($slug, $items, $emptyLabel, 'g7lw-created');
+    }
+
+    /**
+     * 랜덤 문서 여러 건 — `[[#랜덤|N]]` 의 N 이 2 이상일 때.
+     *
+     * 낱낱의 링크는 단일 랜덤 링크와 같은 class(`g7lw-random g7lw-link`)를 쓴다.
+     * 감싸개만 `g7lw-random-list` 로 달라진다.
+     *
+     * @param  list<array{post_id: int, title: string}>  $items
+     */
+    public static function randomList(string $slug, array $items, string $emptyLabel): string
+    {
         if ($items === []) {
-            return '<p class="g7lw-recent g7lw-empty">'.self::e($emptyLabel).'</p>';
+            return '<p class="g7lw-random-list g7lw-empty">'.self::e($emptyLabel).'</p>';
         }
 
-        $html = '<ul class="g7lw-recent">';
+        $html = '<ul class="g7lw-random-list">';
+
+        foreach ($items as $item) {
+            $html .= '<li>'.self::randomLink($slug, (int) $item['post_id'], (string) $item['title']).'</li>';
+        }
+
+        return $html.'</ul>';
+    }
+
+    /**
+     * 둘러보기 — 왼쪽 "최근 작성", 오른쪽 "랜덤" 2단 블록.
+     *
+     * 배치는 **인라인 style 로만** 준다. 템플릿 빌드 CSS 에 이 플러그인 전용 class 가 없어
+     * `g7lw-…` 만으로는 한 줄로 서지 않기 때문이다. `style` 속성은 봇 SSR 정제기
+     * (`App\Seo\HtmlSanitizer`)와 방문자 화면 DOMPurify 양쪽이 남긴다(2026-09-21 실측).
+     *
+     * 좁은 화면에서는 `flex-wrap:wrap` + 단의 `flex-basis:16rem` 이 자동으로 1단으로 접는다.
+     *
+     * @param  list<array{post_id: int, title: string}>  $created  왼쪽 단 항목
+     * @param  list<array{post_id: int, title: string}>  $random  오른쪽 단 항목
+     */
+    public static function tour(
+        string $slug,
+        array $created,
+        array $random,
+        string $createdLabel,
+        string $randomLabel,
+        string $emptyLabel
+    ): string {
+        return '<div class="g7lw-tour" style="display:flex;flex-wrap:wrap;gap:1.5rem">'
+            .self::tourColumn($createdLabel, self::createdList($slug, $created, $emptyLabel))
+            .self::tourColumn($randomLabel, self::randomList($slug, $random, $emptyLabel))
+            .'</div>';
+    }
+
+    /**
+     * 둘러보기의 한 단.
+     */
+    private static function tourColumn(string $label, string $body): string
+    {
+        return '<div class="g7lw-tour-col" style="flex:1 1 16rem;min-width:0">'
+            .'<h3 class="g7lw-tour-label">'.self::e($label).'</h3>'
+            .$body
+            .'</div>';
+    }
+
+    /**
+     * 문서 링크 목록의 공통 틀.
+     *
+     * @param  list<array{post_id: int, title: string}>  $items
+     */
+    private static function docList(string $slug, array $items, string $emptyLabel, string $class): string
+    {
+        if ($items === []) {
+            return '<p class="'.$class.' g7lw-empty">'.self::e($emptyLabel).'</p>';
+        }
+
+        $html = '<ul class="'.$class.'">';
 
         foreach ($items as $item) {
             $html .= '<li>'.self::link(WikiUrl::post($slug, (int) $item['post_id']), (string) $item['title']).'</li>';

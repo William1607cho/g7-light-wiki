@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Placeholders `[[#최근작성]]` / `[[#최근작성|N]]` (documents ordered by the core post
+  `created_at`, default 5, max 50) and `[[#둘러보기]]` / `[[#둘러보기|N]]` (a two-column block:
+  recently created on the left, random on the right, default 5 each; laid out with inline
+  `style` only, folding to one column on narrow screens).
+- `[[#랜덤|N]]` with N of 2 or more now renders a list of N distinct documents. `[[#랜덤]]`
+  without N (and `|1`) keeps the single-link behaviour.
 - Per-board wiki mode, configured from an admin screen (`wiki_boards`: board plus an
   optional front page post).
 - Document index table `light_wiki_docs`, keyed by a normalized title

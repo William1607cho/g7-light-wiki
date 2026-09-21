@@ -11,6 +11,8 @@ return [
         'random' => 'Random document',
         'other' => 'Other',
         'empty' => 'No documents yet.',
+        'tour_created' => 'Recently created',
+        'tour_random' => 'Random documents',
     ],
     'settings' => [
         'saved' => 'Wiki board settings saved.',

@@ -11,6 +11,8 @@ return [
         'random' => '랜덤 문서',
         'other' => '기타',
         'empty' => '아직 문서가 없습니다.',
+        'tour_created' => '최근 작성 문서',
+        'tour_random' => '랜덤 문서',
     ],
     'settings' => [
         'saved' => '위키 게시판 설정을 저장했습니다.',

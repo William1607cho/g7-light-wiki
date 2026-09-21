@@ -17,7 +17,7 @@
 | 제목 = 문서 이름 | 위키 게시판에서 정규화 제목이 같은 글 두 개를 막습니다(422). |
 | 문서 링크 | 본문의 `[[문서명]]`·`[[문서명\|표시 글자]]` 를 그 문서로 가는 링크로 바꿉니다. |
 | 빨간 링크 | 없는 문서는 빨간 링크입니다. 누르면 **그 제목이 채워진** 작성 화면이 열립니다. 글쓰기 권한이 없으면 링크 없이 빨간 글자만 보입니다. |
-| 대문 자리표시 | 대문 글에서 `[[#최근수정]]`·`[[#최근수정\|N]]`·`[[#랜덤]]`·`[[#색인]]` 이 채워집니다. |
+| 자리표시 | 위키 게시판의 문서에서 `[[#최근수정]]`·`[[#최근작성]]`·`[[#랜덤]]`·`[[#색인]]`·`[[#둘러보기]]` 가 채워집니다(각각 `\|N` 으로 개수 지정). |
 
 ## 쓰는 법
 
@@ -33,17 +33,31 @@
 [[분류:인물]]  [[연표:1.0]]     → 예약 표기. 1단계에서는 글자 그대로 남습니다
 ```
 
-대문 글에서만 쓰는 자리표시:
+자리표시 — **위키 게시판의 아무 문서에서나** 쓸 수 있습니다(1.5단계부터. 그 전에는 대문 글 전용이었습니다):
 
 ```
-[[#최근수정]]      최근 고친 문서 10개 (기본값)
-[[#최근수정|20]]   개수 지정 (최대 50)
-[[#랜덤]]          아무 문서로 가는 링크 (열 때마다 대상이 다시 뽑힙니다)
+[[#최근수정]]      최근 고친 문서 10개 (기본값, 최대 50)
+[[#최근수정|20]]   개수 지정
+[[#최근작성]]      최근 쓴 문서 5개 (기본값, 최대 50)
+[[#최근작성|10]]   개수 지정
+[[#랜덤]]          아무 문서로 가는 링크 하나
+[[#랜덤|4]]        서로 다른 문서 4개의 링크 목록 (N 이 2 이상일 때)
 [[#색인]]          가나다(초성)·A~Z·0~9·기타 색인
+[[#둘러보기]]      왼쪽 "최근 작성" · 오른쪽 "랜덤" 2단 블록 (각 5개)
+[[#둘러보기|3]]    각 단의 개수 지정
 ```
 
-랜덤 대상은 **대문 글을 열 때 고릅니다.** 대문을 새로고침하면 다른 문서를 가리킵니다.
+**최근수정과 최근작성은 다릅니다.** 최근수정은 마지막으로 고친 순서, 최근작성은 글을 처음
+쓴 순서입니다.
+
+랜덤 대상은 **그 문서를 열 때 고릅니다.** 새로고침하면 다른 문서를 가리킵니다.
 고를 문서가 없으면 링크 대신 "아직 문서가 없습니다." 가 나옵니다.
+
+목록에서 빠지는 문서: 삭제된 글, 게시 상태가 아닌 글, 비밀글, 답글, 대문 글,
+그리고 **자리표시가 실린 그 문서 자신**입니다.
+
+`[[#둘러보기]]` 의 2단 배치는 인라인 `style` 로 줍니다(이 플러그인 전용 CSS 가 템플릿 빌드에
+없기 때문입니다). 좁은 화면에서는 자동으로 1단이 됩니다.
 
 ### 주의
 
@@ -117,7 +131,7 @@ through its own table, two response middlewares, three hook listeners and three 
 | Title is the document name | Two posts with the same normalized title are rejected (422). |
 | Document links | `[[Document]]` and `[[Document\|label]]` in a post body become links. |
 | Red links | Missing documents show as red links that open the write form **with the title filled in**. Without write permission they are plain red text. |
-| Front page placeholders | `[[#최근수정]]`, `[[#최근수정\|N]]`, `[[#랜덤]]` and `[[#색인]]` are filled in on the front page post. The random target is picked **while rendering the front page**, so reloading it points somewhere else. |
+| Placeholders | `[[#최근수정]]`, `[[#최근작성]]`, `[[#랜덤]]`, `[[#색인]]` and `[[#둘러보기]]` (each accepting `\|N`) are filled in on **any HTML-mode document** of a wiki board. The random target is picked **while rendering that document**, so reloading it points somewhere else. |
 
 ## Usage
 
