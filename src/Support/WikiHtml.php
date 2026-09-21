@@ -48,13 +48,25 @@ final class WikiHtml
     /**
      * 랜덤 문서로 가는 링크.
      *
-     * `target="_self"` 를 명시해 SPA 가 아니라 **브라우저 전체 이동**으로 가게 한다.
-     * 이 템플릿은 본문 앵커 클릭을 가로채지 않으므로 서버 302 를 그대로 따라간다.
+     * 대상은 **치환 시점에** 고른다. 플러그인 주소로 보내 서버가 302 로 고르게 하면,
+     * 브라우저 전체 이동에는 Bearer 토큰이 실리지 않아 로그인한 사람도 비회원으로 보인다
+     * (비공개 위키에서 401 로 떨어진다). 치환은 토큰이 실린 글 상세 응답 안에서 일어나므로
+     * 요청자 기준으로 고를 수 있다.
+     *
+     * 그래서 결과물은 그냥 문서 링크다 — 새로고침할 때마다 대상이 다시 뽑힌다.
      */
-    public static function randomLink(int $boardId, string $label): string
+    public static function randomLink(string $slug, int $postId, string $label): string
     {
-        return '<a class="g7lw-random" href="'.self::e(WikiUrl::random($boardId)).'"'
-            .' target="_self" rel="nofollow">'.self::e($label).'</a>';
+        return '<a class="g7lw-random '.self::CLASS_LINK.'" href="'
+            .self::e(WikiUrl::post($slug, $postId)).'">'.self::e($label).'</a>';
+    }
+
+    /**
+     * 고를 문서가 없을 때 — 링크 대신 안내 글자.
+     */
+    public static function randomEmpty(string $label): string
+    {
+        return '<span class="g7lw-random g7lw-empty">'.self::e($label).'</span>';
     }
 
     /**

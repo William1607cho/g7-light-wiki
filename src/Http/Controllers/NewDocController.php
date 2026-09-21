@@ -10,7 +10,6 @@ use Illuminate\Routing\Controller;
 use Plugins\G7\Light\Wiki\Support\BoardLookup;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
-use Plugins\G7\Light\Wiki\Support\WikiGate;
 use Plugins\G7\Light\Wiki\Support\WikiUrl;
 
 /**
@@ -21,9 +20,20 @@ use Plugins\G7\Light\Wiki\Support\WikiUrl;
  * `…posts.form-data` 응답에 {@see \Plugins\G7\Light\Wiki\Http\Middleware\PrefillWikiTitleExtension}
  * 이 그 값을 꺼내 제목 초기값으로 넣고 즉시 지운다.
  *
- * 쿼리스트링을 작성 화면 주소에 그대로 달지 않는 이유: 프론트 폼 데이터소스가 페이지
- * 쿼리를 API 로 넘기지 않아(선언된 `post_id`·`parent_id` 만 보낸다) 어차피 서버가 읽을
- * 수 없고, 템플릿 수정 없이 값을 건네려면 서버 쪽 통로가 필요하기 때문이다.
+ * ## 여기서 권한을 보지 않는 이유
+ *
+ * 이 주소에는 브라우저가 **전체 페이지 이동**으로 온다. 그 요청에는 SPA 가 붙이는 Bearer
+ * 토큰이 없어(토큰은 localStorage 에 있고 `ApiClient` 가 XHR 에만 싣는다) 로그인한 사람도
+ * 비회원으로 보인다. 세션으로 식별할 수는 있지만 그 세션은 `/dev` 대시보드용 부산물이고
+ * 수명이 `SESSION_LIFETIME` 에 묶여 있어, 토큰이 살아 있는데도 링크가 갑자기 막힌다.
+ *
+ * 권한은 **토큰이 실려 오는 곳**에서 본다:
+ *  - 작성 화면의 폼 데이터 API 는 코어가 이미 `sirsoft-board.{slug}.posts.write` 로 막는다.
+ *  - 글 저장도 코어가 같은 권한으로 막는다.
+ *  - 위 미들웨어도 요청자에게 글쓰기 권한이 없으면 세션 값을 쓰지 않고 지우기만 한다.
+ *
+ * 그래서 여기서 하는 일은 "위키 게시판인가"(아니면 404) 확인과 제목 전달뿐이다.
+ * 302 가 가리키는 작성 화면 자체가 권한이 없으면 열리지 않으므로 새는 것이 없다.
  */
 class NewDocController extends Controller
 {
@@ -43,8 +53,6 @@ class NewDocController extends Controller
         if ($slug === null) {
             return ResponseHelper::notFound('messages.board.not_wiki', domain: WikiBoardSettings::IDENTIFIER);
         }
-
-        WikiGate::assert($request, $slug, 'posts.write');
 
         $title = mb_substr(trim((string) $request->query('title', '')), 0, TitleNormalizer::MAX_LENGTH, 'UTF-8');
 

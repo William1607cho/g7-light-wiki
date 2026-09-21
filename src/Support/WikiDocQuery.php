@@ -109,20 +109,6 @@ final class WikiDocQuery
     }
 
     /**
-     * 랜덤 후보 전체의 글 ID 목록 — 검증에서 "302 대상이 후보 안인가" 를 보기 위한 것.
-     *
-     * @return list<int>
-     */
-    public static function candidateIds(int $boardId, ?int $frontPostId): array
-    {
-        return self::candidates($boardId, $frontPostId)
-            ->orderBy('d.post_id')
-            ->get()
-            ->map(static fn ($row): int => (int) $row->post_id)
-            ->all();
-    }
-
-    /**
      * 후보 조회의 공통 뼈대 — 색인 표에 코어 글 표를 붙이고 제외 조건을 건다.
      */
     private static function candidates(int $boardId, ?int $frontPostId): Builder

@@ -12,11 +12,10 @@ class FrontPlaceholderRendererTest extends TestCase
     /** 마지막으로 요청된 최근수정 개수 */
     private int $askedLimit = 0;
 
-    private function renderer(bool $canRead = true): FrontPlaceholderRenderer
+    private function renderer(bool $canRead = true, ?int $randomPostId = 12): FrontPlaceholderRenderer
     {
         return new FrontPlaceholderRenderer(
             'test-wiki',
-            8,
             $canRead,
             function (int $limit): array {
                 $this->askedLimit = $limit;
@@ -30,6 +29,7 @@ class FrontPlaceholderRendererTest extends TestCase
                 ['id' => 11, 'title' => '가나다', 'title_norm' => '가나다'],
                 ['id' => 12, 'title' => 'Apple', 'title_norm' => 'apple'],
             ],
+            static fn (): ?int => $randomPostId,
             ['random' => '랜덤 문서', 'other' => '기타', 'empty' => '아직 문서가 없습니다.'],
         );
     }
@@ -77,13 +77,23 @@ class FrontPlaceholderRendererTest extends TestCase
         $this->assertSame(WikiDocQuery::RECENT_DEFAULT, $this->askedLimit);
     }
 
-    public function test_랜덤은_플러그인_api_로_가는_링크다(): void
+    public function test_랜덤은_치환_시점에_고른_문서로_가는_일반_링크다(): void
     {
         $html = $this->renderer()->render($this->token(WikiMarkupParser::PLACEHOLDER_RANDOM));
 
-        $this->assertStringContainsString('/api/plugins/g7-light-wiki/random?board=8', $html);
-        $this->assertStringContainsString('target="_self"', $html);
+        // 플러그인 주소로 보내면 브라우저 전체 이동에 토큰이 실리지 않아 비회원으로 보인다.
+        $this->assertStringNotContainsString('/api/plugins/', $html);
+        $this->assertStringContainsString('href="/board/test-wiki/12"', $html);
+        $this->assertStringContainsString('g7lw-random', $html);
         $this->assertStringContainsString('랜덤 문서', $html);
+    }
+
+    public function test_고를_문서가_없으면_링크_대신_안내_글자다(): void
+    {
+        $html = $this->renderer(randomPostId: null)->render($this->token(WikiMarkupParser::PLACEHOLDER_RANDOM));
+
+        $this->assertStringNotContainsString('<a ', $html);
+        $this->assertStringContainsString('아직 문서가 없습니다.', $html);
     }
 
     public function test_색인은_묶음별_제목과_링크를_만든다(): void

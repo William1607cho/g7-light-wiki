@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Plugins\G7\Light\Wiki\Http\Controllers\NewDocController;
 use Plugins\G7\Light\Wiki\Support\BoardLookup;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
+use Plugins\G7\Light\Wiki\Support\WikiGate;
 
 /**
  * 작성 화면의 제목 초기값을 채운다.
@@ -31,6 +32,13 @@ use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
  *
  * 세션을 시작하는 것은 **위키 게시판의 새 글 작성 요청뿐**이다. 그 밖의 요청은 첫 줄에서
  * 걸러져 원본 응답을 그대로 돌려받는다.
+ *
+ * ## 권한 판정이 여기 있는 이유
+ *
+ * `…/new` 는 브라우저 전체 이동으로 들어와 토큰이 없다 — 거기서 요청자를 보면 로그인한
+ * 사람도 비회원으로 보인다. 반면 이 요청은 SPA 가 보내는 XHR 이라 토큰이 실려 있다.
+ * 그래서 "이 사람이 이 게시판에 글을 쓸 수 있는가" 는 여기서 본다. 라우트 자체도 코어가
+ * `sirsoft-board.{slug}.posts.write` 로 이미 막고 있어, 이 검사는 그 위의 한 겹이다.
  */
 class PrefillWikiTitleExtension
 {
@@ -72,20 +80,31 @@ class PrefillWikiTitleExtension
 
     /**
      * 세션에 실린 제목을 응답에 넣고 **즉시 지운다** (한 번만 쓰인다).
+     *
+     * 세션 값은 어떤 경우에도 **먼저 꺼내서 지운다.** 권한이 없거나 응답이 200 이 아니어도
+     * 마찬가지다 — 남겨 두면 다음에 우연히 연 작성 화면에 엉뚱한 제목이 들어간다.
      */
     private function inject(Request $request, mixed $response): mixed
     {
-        if (! $response instanceof JsonResponse || $response->getStatusCode() !== 200) {
-            return $response;
-        }
-
         if (! $request->hasSession()) {
             return $response;
         }
 
         $title = $request->session()->pull(NewDocController::SESSION_KEY);
 
+        if (! $response instanceof JsonResponse || $response->getStatusCode() !== 200) {
+            return $response;
+        }
+
         if (! is_string($title) || $title === '') {
+            return $response;
+        }
+
+        // 글쓰기 권한이 없으면 값을 쓰지 않는다(위에서 이미 지웠다).
+        // 이 요청에는 SPA 가 붙인 토큰이 실려 있어 요청자를 믿고 판정할 수 있다.
+        $slug = (string) $request->route('slug');
+
+        if ($slug === '' || ! WikiGate::canWrite($slug, $request->user())) {
             return $response;
         }
 

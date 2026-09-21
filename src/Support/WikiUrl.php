@@ -44,12 +44,4 @@ final class WikiUrl
     {
         return self::API_PREFIX.'/new?'.http_build_query(['board' => $boardId, 'title' => $title]);
     }
-
-    /**
-     * 랜덤 문서로 302 하는 주소.
-     */
-    public static function random(int $boardId): string
-    {
-        return self::API_PREFIX.'/random?'.http_build_query(['board' => $boardId]);
-    }
 }

@@ -38,9 +38,12 @@
 ```
 [[#최근수정]]      최근 고친 문서 10개 (기본값)
 [[#최근수정|20]]   개수 지정 (최대 50)
-[[#랜덤]]          아무 문서로 보내는 링크
+[[#랜덤]]          아무 문서로 가는 링크 (열 때마다 대상이 다시 뽑힙니다)
 [[#색인]]          가나다(초성)·A~Z·0~9·기타 색인
 ```
+
+랜덤 대상은 **대문 글을 열 때 고릅니다.** 대문을 새로고침하면 다른 문서를 가리킵니다.
+고를 문서가 없으면 링크 대신 "아직 문서가 없습니다." 가 나옵니다.
 
 ### 주의
 
@@ -52,6 +55,17 @@
   전부 `[[…]]` 인 것도 그래서입니다.
 - `<a>`·`<code>`·`<pre>` 안의 `[[…]]` 는 바꾸지 않습니다 — 코드 예시가 링크로 변하지 않습니다.
 - 목록·검색·마이페이지의 **요약문**에는 `[[…]]` 가 글자 그대로 보입니다. 치환은 글 상세에서만 일어납니다.
+
+### 권한을 어디서 보는가
+
+브라우저가 **전체 페이지 이동**으로 여는 주소(빨간 링크가 가는 `…/new`)에는 화면이 붙이는
+로그인 토큰이 실리지 않습니다. 토큰은 브라우저 저장소에 있고 화면 내부 통신에만 붙기
+때문입니다. 그래서 그런 주소에서는 권한을 보지 않고, 토큰이 실려 오는 곳에서 봅니다.
+
+- 빨간 링크가 가는 `…/new` — **위키 게시판인지만** 확인하고 작성 화면으로 보냅니다.
+- 작성 화면의 폼 데이터와 글 저장 — 그누보드7 코어가 `posts.write` 로 막습니다.
+  제목 미리 채우기도 글쓰기 권한이 있는 요청에서만 들어갑니다.
+- 대문의 랜덤 링크 — 대문 글을 열 때 **그 사람이 볼 수 있는 문서 중에서** 고릅니다.
 
 ## artisan 명령
 
@@ -103,7 +117,7 @@ through its own table, two response middlewares, three hook listeners and three 
 | Title is the document name | Two posts with the same normalized title are rejected (422). |
 | Document links | `[[Document]]` and `[[Document\|label]]` in a post body become links. |
 | Red links | Missing documents show as red links that open the write form **with the title filled in**. Without write permission they are plain red text. |
-| Front page placeholders | `[[#최근수정]]`, `[[#최근수정\|N]]`, `[[#랜덤]]` and `[[#색인]]` are filled in on the front page post. |
+| Front page placeholders | `[[#최근수정]]`, `[[#최근수정\|N]]`, `[[#랜덤]]` and `[[#색인]]` are filled in on the front page post. The random target is picked **while rendering the front page**, so reloading it points somewhere else. |
 
 ## Usage
 
@@ -121,6 +135,15 @@ through its own table, two response middlewares, three hook listeners and three 
 - `[[…]]` inside `<a>`, `<code>` and `<pre>` is left alone.
 - List and search **excerpts** still show the raw `[[…]]` — substitution happens on the post
   detail response only.
+
+### Where permissions are checked
+
+A URL the browser opens as a **full page navigation** (the `…/new` address behind a red link)
+carries no bearer token — the token lives in browser storage and the front end only attaches it
+to its own XHR calls. So such a URL checks nothing but "is this a wiki board"; permissions are
+checked where the token does arrive: the write form's data endpoint and the post save, both
+already gated by the core on `posts.write`. The front page's random link is resolved while the
+front page is rendered, over the documents that requester may read.
 
 ## Artisan command
 

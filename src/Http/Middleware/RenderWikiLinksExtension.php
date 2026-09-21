@@ -173,15 +173,19 @@ class RenderWikiLinksExtension
 
     /**
      * 대문 글의 자리표시 렌더러 — 목록 조회는 자리표시가 실제로 있을 때만 일어난다.
+     *
+     * 랜덤 대상도 **여기서** 고른다. 플러그인 주소로 보내 서버가 302 로 고르게 하면 브라우저
+     * 전체 이동에 토큰이 실리지 않아 로그인한 사람도 비회원으로 보인다. 이 응답은 토큰이
+     * 실린 요청의 결과라 요청자 기준으로 고를 수 있다.
      */
     private function frontRenderer(Request $request, string $slug, int $boardId, int $frontPostId): FrontPlaceholderRenderer
     {
         return new FrontPlaceholderRenderer(
             $slug,
-            $boardId,
             WikiGate::canRead($slug, $request->user()),
             static fn (int $limit): array => WikiDocQuery::recent($boardId, $frontPostId, $limit),
             static fn (): array => WikiDocQuery::forIndex($boardId, $frontPostId),
+            static fn (): ?int => WikiDocQuery::randomPostId($boardId, $frontPostId),
             [
                 'random' => (string) __('g7-light-wiki::messages.front.random'),
                 'other' => (string) __('g7-light-wiki::messages.front.other'),

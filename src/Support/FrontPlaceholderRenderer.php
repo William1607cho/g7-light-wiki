@@ -18,18 +18,18 @@ final class FrontPlaceholderRenderer
 {
     /**
      * @param  string  $slug  게시판 슬러그
-     * @param  int  $boardId  게시판 ID
      * @param  bool  $canRead  요청자에게 이 게시판 글 읽기 권한이 있는가
      * @param  \Closure(int): list<array{post_id: int, title: string}>  $recent  최근 수정 목록 공급자
      * @param  \Closure(): list<array{id: int, title: string, title_norm: string}>  $index  색인 목록 공급자
+     * @param  \Closure(): ?int  $random  랜덤 문서 1건 공급자 (없으면 null)
      * @param  array{random: string, other: string, empty: string}  $labels  언어 파일 문구
      */
     public function __construct(
         private readonly string $slug,
-        private readonly int $boardId,
         private readonly bool $canRead,
         private readonly \Closure $recent,
         private readonly \Closure $index,
+        private readonly \Closure $random,
         private readonly array $labels,
     ) {}
 
@@ -55,10 +55,7 @@ final class FrontPlaceholderRenderer
                 ($this->recent)(self::recentLimit($token['argument'] ?? null)),
                 $this->labels['empty'] ?? '',
             ),
-            WikiMarkupParser::PLACEHOLDER_RANDOM => WikiHtml::randomLink(
-                $this->boardId,
-                $this->labels['random'] ?? '',
-            ),
+            WikiMarkupParser::PLACEHOLDER_RANDOM => $this->randomHtml(),
             WikiMarkupParser::PLACEHOLDER_INDEX => WikiHtml::indexList(
                 $this->slug,
                 WikiIndexBuilder::build(($this->index)()),
@@ -67,6 +64,20 @@ final class FrontPlaceholderRenderer
             ),
             default => null,
         };
+    }
+
+    /**
+     * 랜덤 문서 링크 — 고를 문서가 없으면 안내 글자.
+     */
+    private function randomHtml(): string
+    {
+        $postId = ($this->random)();
+
+        if (! is_int($postId) || $postId < 1) {
+            return WikiHtml::randomEmpty($this->labels['empty'] ?? '');
+        }
+
+        return WikiHtml::randomLink($this->slug, $postId, $this->labels['random'] ?? '');
     }
 
     /**
