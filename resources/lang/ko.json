@@ -1,0 +1,25 @@
+{
+    "editor": {
+        "data_source": {
+            "wiki_boards": "위키 게시판 설정"
+        }
+    },
+    "settings": {
+        "title": "위키 게시판 설정",
+        "description": "어떤 게시판을 위키로 쓸지, 게시판마다 대문 글을 무엇으로 할지 정합니다.",
+        "notice": "위키로 켠 게시판에서는 글 제목이 곧 문서 이름이 되어 같은 제목을 두 번 쓸 수 없습니다. 본문의 [[문서명]] 표기가 그 문서로 가는 링크가 됩니다.",
+        "notice_html": "본문은 HTML 모드(서식 에디터)로 써야 링크가 보입니다. 평문 모드에서는 표기가 글자 그대로 남습니다.",
+        "board_column": "게시판",
+        "front_post_column": "대문 글 ID",
+        "front_post_placeholder": "비워 두면 대문 없음",
+        "front_post_hint": "대문 글에서만 [[#최근수정]] · [[#랜덤]] · [[#색인]] 자리표시가 채워집니다.",
+        "use": "위키로 쓰기",
+        "unuse": "위키 해제",
+        "in_use": "위키",
+        "inactive": "비활성",
+        "filter_placeholder": "게시판 이름으로 찾기",
+        "empty": "게시판이 없습니다.",
+        "save_success": "위키 게시판 설정을 저장했습니다.",
+        "save_error": "위키 게시판 설정 저장에 실패했습니다."
+    }
+}

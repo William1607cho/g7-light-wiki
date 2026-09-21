@@ -1,0 +1,432 @@
+{
+    "version": "1.0.0",
+    "layout_name": "plugin_settings",
+    "permissions": [
+        "core.plugins.read"
+    ],
+    "extends": "_admin_base",
+    "meta": {
+        "title": "$t:g7-light-wiki.settings.title",
+        "description": "$t:g7-light-wiki.settings.description"
+    },
+    "data_sources": [
+        {
+            "id": "wikiBoards",
+            "label_key": "$t:g7-light-wiki.editor.data_source.wiki_boards",
+            "type": "api",
+            "endpoint": "/api/plugins/g7-light-wiki/admin/wiki-boards",
+            "method": "GET",
+            "auto_fetch": true,
+            "auth_required": true,
+            "refetchOnMount": true,
+            "onSuccess": [
+                {
+                    "handler": "setState",
+                    "params": {
+                        "target": "local",
+                        "rows": "{{response.data.data.wiki_boards ?? []}}",
+                        "dirty": false,
+                        "errors": null
+                    }
+                }
+            ]
+        }
+    ],
+    "slots": {
+        "content": [
+            {
+                "id": "light_wiki_settings_content",
+                "type": "basic",
+                "name": "Div",
+                "props": {
+                    "className": "admin-page-content-responsive"
+                },
+                "children": [
+                    {
+                        "id": "page_header",
+                        "type": "composite",
+                        "name": "PageHeader",
+                        "props": {
+                            "title": "$t:g7-light-wiki.settings.title",
+                            "description": "$t:g7-light-wiki.settings.description",
+                            "backPath": "/admin/plugins",
+                            "backLabel": "$t:admin.plugins.back_to_list"
+                        }
+                    },
+                    {
+                        "id": "notice_banner",
+                        "type": "basic",
+                        "name": "Div",
+                        "props": {
+                            "className": "alert-info"
+                        },
+                        "children": [
+                            {
+                                "type": "basic",
+                                "name": "P",
+                                "props": {
+                                    "className": "text-sm"
+                                },
+                                "text": "$t:g7-light-wiki.settings.notice"
+                            },
+                            {
+                                "type": "basic",
+                                "name": "P",
+                                "props": {
+                                    "className": "text-sm mt-1"
+                                },
+                                "text": "$t:g7-light-wiki.settings.notice_html"
+                            },
+                            {
+                                "type": "basic",
+                                "name": "P",
+                                "props": {
+                                    "className": "text-xs mt-1 text-gray-500 dark:text-gray-400"
+                                },
+                                "text": "$t:g7-light-wiki.settings.front_post_hint"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "validation_error",
+                        "type": "basic",
+                        "name": "Div",
+                        "if": "{{_local.errors}}",
+                        "props": {
+                            "className": "alert-danger"
+                        },
+                        "children": [
+                            {
+                                "type": "basic",
+                                "name": "Ul",
+                                "props": {
+                                    "className": "list-disc list-inside space-y-1"
+                                },
+                                "iteration": {
+                                    "source": "Object.values(_local.errors ?? {}).flatMap(m => Array.isArray(m) ? m : [m])",
+                                    "item_var": "message"
+                                },
+                                "children": [
+                                    {
+                                        "type": "basic",
+                                        "name": "Li",
+                                        "props": {
+                                            "className": "text-error-soft"
+                                        },
+                                        "text": "{{message}}"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "wiki_board_panel",
+                        "type": "basic",
+                        "name": "Div",
+                        "props": {
+                            "className": "card p-4 mt-4"
+                        },
+                        "children": [
+                            {
+                                "id": "board_query",
+                                "type": "basic",
+                                "name": "Input",
+                                "props": {
+                                    "type": "search",
+                                    "name": "board_query",
+                                    "value": "{{_local.q ?? ''}}",
+                                    "placeholder": "$t:g7-light-wiki.settings.filter_placeholder",
+                                    "className": "input w-full sm:max-w-xs mb-3"
+                                },
+                                "actions": [
+                                    {
+                                        "type": "change",
+                                        "handler": "setState",
+                                        "params": {
+                                            "target": "local",
+                                            "q": "{{$event.target.value}}"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "basic",
+                                "name": "Div",
+                                "props": {
+                                    "className": "flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 pb-2"
+                                },
+                                "children": [
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "props": {
+                                            "className": "min-w-32"
+                                        },
+                                        "text": "$t:g7-light-wiki.settings.board_column"
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "text": "$t:g7-light-wiki.settings.front_post_column"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "basic",
+                                "name": "Div",
+                                "iteration": {
+                                    "source": "(wikiBoards?.data?.boards ?? []).filter(b => !_local.q || String(b.name ?? '').toLowerCase().includes(String(_local.q).trim().toLowerCase()) || String(b.slug ?? '').toLowerCase().includes(String(_local.q).trim().toLowerCase()))",
+                                    "item_var": "board"
+                                },
+                                "props": {
+                                    "data-board-row": "{{board.id}}",
+                                    "className": "flex flex-wrap items-center gap-2 py-2 border-b border-gray-100 dark:border-gray-800"
+                                },
+                                "children": [
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "props": {
+                                            "className": "text-sm font-medium min-w-32"
+                                        },
+                                        "text": "{{board.name}}"
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "props": {
+                                            "className": "text-xs text-gray-400 dark:text-gray-500"
+                                        },
+                                        "text": "{{board.slug}}"
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "props": {
+                                            "className": "badge badge-gray"
+                                        },
+                                        "text": "#{{board.id}}"
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "props": {
+                                            "className": "badge badge-gray"
+                                        },
+                                        "text": "$t:g7-light-wiki.settings.inactive",
+                                        "if": "{{!board.is_active}}"
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "props": {
+                                            "className": "badge badge-gray"
+                                        },
+                                        "text": "$t:g7-light-wiki.settings.in_use",
+                                        "if": "{{(_local.rows ?? []).filter(r => r.board_id === board.id).length > 0}}"
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Input",
+                                        "if": "{{(_local.rows ?? []).filter(r => r.board_id === board.id).length > 0}}",
+                                        "props": {
+                                            "type": "number",
+                                            "min": "1",
+                                            "name": "front_post_id",
+                                            "value": "{{(_local.rows ?? []).filter(r => r.board_id === board.id).map(r => r.front_post_id ?? '')[0] ?? ''}}",
+                                            "placeholder": "$t:g7-light-wiki.settings.front_post_placeholder",
+                                            "className": "input w-48"
+                                        },
+                                        "actions": [
+                                            {
+                                                "type": "change",
+                                                "handler": "setState",
+                                                "params": {
+                                                    "target": "local",
+                                                    "rows": "{{(_local.rows ?? []).map(r => r.board_id === board.id ? {board_id: r.board_id, front_post_id: $event.target.value} : r)}}",
+                                                    "dirty": true
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Button",
+                                        "if": "{{!((_local.rows ?? []).filter(r => r.board_id === board.id).length > 0)}}",
+                                        "props": {
+                                            "type": "button",
+                                            "className": "btn btn-secondary btn-sm ml-auto"
+                                        },
+                                        "actions": [
+                                            {
+                                                "type": "click",
+                                                "handler": "setState",
+                                                "params": {
+                                                    "target": "local",
+                                                    "rows": "{{[...(_local.rows ?? []), {board_id: board.id, front_post_id: ''}]}}",
+                                                    "dirty": true
+                                                }
+                                            }
+                                        ],
+                                        "children": [
+                                            {
+                                                "type": "basic",
+                                                "name": "Span",
+                                                "text": "$t:g7-light-wiki.settings.use"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Button",
+                                        "if": "{{(_local.rows ?? []).filter(r => r.board_id === board.id).length > 0}}",
+                                        "props": {
+                                            "type": "button",
+                                            "className": "btn btn-secondary btn-sm ml-auto"
+                                        },
+                                        "actions": [
+                                            {
+                                                "type": "click",
+                                                "handler": "setState",
+                                                "params": {
+                                                    "target": "local",
+                                                    "rows": "{{(_local.rows ?? []).filter(r => r.board_id !== board.id)}}",
+                                                    "dirty": true
+                                                }
+                                            }
+                                        ],
+                                        "children": [
+                                            {
+                                                "type": "basic",
+                                                "name": "Span",
+                                                "text": "$t:g7-light-wiki.settings.unuse"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "basic",
+                                "name": "P",
+                                "props": {
+                                    "className": "text-sm text-gray-400 dark:text-gray-500 py-2"
+                                },
+                                "text": "$t:g7-light-wiki.settings.empty",
+                                "if": "{{(wikiBoards?.data?.boards ?? []).length === 0}}"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "basic",
+                        "name": "Div",
+                        "props": {
+                            "className": "flex justify-end gap-2 mt-4"
+                        },
+                        "children": [
+                            {
+                                "id": "save_button",
+                                "type": "basic",
+                                "name": "Button",
+                                "props": {
+                                    "disabled": "{{!_local.dirty || _local.isSaving || !wikiBoards?.data}}",
+                                    "className": "btn btn-primary flex-center gap-1.5"
+                                },
+                                "actions": [
+                                    {
+                                        "type": "click",
+                                        "handler": "sequence",
+                                        "actions": [
+                                            {
+                                                "handler": "setState",
+                                                "params": {
+                                                    "target": "local",
+                                                    "isSaving": true,
+                                                    "errors": null
+                                                }
+                                            },
+                                            {
+                                                "handler": "apiCall",
+                                                "auth_required": true,
+                                                "target": "/api/plugins/g7-light-wiki/admin/wiki-boards",
+                                                "params": {
+                                                    "method": "PUT",
+                                                    "body": {
+                                                        "wiki_boards": "{{_local.rows ?? []}}"
+                                                    }
+                                                },
+                                                "onSuccess": [
+                                                    {
+                                                        "handler": "setState",
+                                                        "params": {
+                                                            "target": "local",
+                                                            "isSaving": false,
+                                                            "dirty": false
+                                                        }
+                                                    },
+                                                    {
+                                                        "handler": "toast",
+                                                        "params": {
+                                                            "type": "success",
+                                                            "message": "$t:g7-light-wiki.settings.save_success"
+                                                        }
+                                                    },
+                                                    {
+                                                        "handler": "refetchDataSource",
+                                                        "params": {
+                                                            "dataSourceId": "wikiBoards"
+                                                        }
+                                                    }
+                                                ],
+                                                "onError": [
+                                                    {
+                                                        "handler": "setState",
+                                                        "params": {
+                                                            "target": "local",
+                                                            "isSaving": false,
+                                                            "errors": "{{error.errors}}"
+                                                        }
+                                                    },
+                                                    {
+                                                        "handler": "toast",
+                                                        "params": {
+                                                            "type": "error",
+                                                            "message": "{{error.message ?? '$t:g7-light-wiki.settings.save_error'}}"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "children": [
+                                    {
+                                        "type": "basic",
+                                        "name": "Icon",
+                                        "if": "{{_local.isSaving}}",
+                                        "props": {
+                                            "name": "spinner",
+                                            "className": "spinner-sm"
+                                        }
+                                    },
+                                    {
+                                        "type": "basic",
+                                        "name": "Span",
+                                        "text": "{{_local.isSaving ? '$t:common.saving' : '$t:common.save'}}"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "schema": {
+        "wiki_boards": {
+            "type": "array",
+            "default": [],
+            "label": "$t:g7-light-wiki.settings.title",
+            "hint": "$t:g7-light-wiki.settings.notice"
+        }
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "editor": {
+        "data_source": {
+            "wiki_boards": "Wiki board settings"
+        }
+    },
+    "settings": {
+        "title": "Wiki Boards",
+        "description": "Choose which boards are used as a wiki, and which post is each board's front page.",
+        "notice": "On a wiki board the post title is the document name, so a title cannot be used twice. [[Document]] markup in a post body becomes a link to that document.",
+        "notice_html": "Bodies must be written in HTML mode (the rich editor) for links to appear. In plain-text mode the markup stays as literal characters.",
+        "board_column": "Board",
+        "front_post_column": "Front page post ID",
+        "front_post_placeholder": "Leave empty for no front page",
+        "front_post_hint": "The [[#최근수정]], [[#랜덤]] and [[#색인]] placeholders are only filled in on the front page post.",
+        "use": "Use as wiki",
+        "unuse": "Stop using",
+        "in_use": "Wiki",
+        "inactive": "Inactive",
+        "filter_placeholder": "Find by board name",
+        "empty": "No boards.",
+        "save_success": "Wiki board settings saved.",
+        "save_error": "Could not save the wiki board settings."
+    }
+}
