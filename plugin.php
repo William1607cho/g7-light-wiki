@@ -7,6 +7,7 @@ use App\Extension\AbstractPlugin;
 use App\Extension\Helpers\ExtensionMenuSyncHelper;
 use Plugins\G7\Light\Wiki\Http\Middleware\PrefillWikiTitleExtension;
 use Plugins\G7\Light\Wiki\Http\Middleware\RenderWikiLinksExtension;
+use Plugins\G7\Light\Wiki\Http\Middleware\WikiBoardListExtension;
 use Plugins\G7\Light\Wiki\Listeners\BoardCleanupListener;
 use Plugins\G7\Light\Wiki\Listeners\PostIndexListener;
 use Plugins\G7\Light\Wiki\Listeners\PostTitleGuardListener;
@@ -17,18 +18,21 @@ use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
  *
  * sirsoft-board 기본형 게시판을 개인 위키로 쓰게 한다. 게시판별로 켜며, 권한 구성에 따라
  * 공개 위키와 비공개 위키를 겸용한다. 코어·sirsoft-board·템플릿은 **파일 한 줄도 고치지
- * 않는다** — 전용 테이블 1개, 응답 미들웨어 2개, 훅 리스너 3개, 플러그인 라우트 3개로만 동작한다.
+ * 않는다** — 전용 테이블 1개, 응답 미들웨어 3개, 훅 리스너 3개, 플러그인 라우트 3개로만 동작한다.
  *
- * ## 하는 일 (1단계)
+ * ## 하는 일
  *
  * 1. **제목이 문서 이름** — 위키 게시판에서 정규화 제목이 같은 글 두 개를 막는다(422).
  *    무엇을 같은 제목으로 볼지는 `Support\TitleNormalizer` 가 정하고, 최후의 보루는
  *    색인 표의 `(board_id, title_norm)` 유니크 인덱스다.
  * 2. **문서 링크** — 글 상세 응답에서 본문의 `[[문서명]]`·`[[문서명|표시]]` 를 링크로 바꾼다.
  *    없는 문서는 빨간 링크(글쓰기 권한이 없으면 빨간 글자)다.
- * 3. **대문 자리표시** — 대문 글에서만 `[[#최근수정]]`·`[[#랜덤]]`·`[[#색인]]` 을 채운다.
+ * 3. **자리표시** — 위키 게시판의 HTML 모드 문서에서 `[[#최근수정]]`·`[[#최근작성]]`·
+ *    `[[#랜덤]]`·`[[#색인]]`·`[[#둘러보기]]` 를 채운다(1.5단계부터 대문 전용이 아니다).
  *    랜덤 대상은 **치환 시점에** 요청자 기준으로 고른다(새로고침하면 다시 뽑힌다).
  * 4. **제목 미리 채우기** — 빨간 링크를 누르면 그 제목이 들어간 작성 화면이 열린다.
+ * 5. **문서 목록** — 위키 게시판의 글 목록을 검색어 없으면 대문 1건, 검색어가 있으면
+ *    제목이 걸리는 문서 목록으로 바꾼다. 항목은 코어 변환기가 만든 것을 그대로 쓴다.
  *
  * ## 권한을 어디서 보는가
  *
@@ -111,7 +115,7 @@ class Plugin extends AbstractPlugin
      * 훅 리스너.
      *
      * - PostTitleGuardListener: 제목 중복을 422 로 막는다 (방문자·관리자 경로 모두).
-     * - PostIndexListener: 생성·수정·복원·삭제에 맞춰 색인을 고치고 대문 글 봇 캐시를 비운다.
+     * - PostIndexListener: 생성·수정·복원·삭제에 맞춰 색인을 고치고 자리표시 문서의 봇 캐시를 비운다.
      * - BoardCleanupListener: 게시판이 삭제되면 그 게시판의 색인 줄을 모두 지운다.
      *
      * 액션 훅은 전부 `'sync' => true` 다 — 큐를 기다리면 방금 만든 문서가 몇 초 동안
@@ -131,9 +135,9 @@ class Plugin extends AbstractPlugin
     /**
      * 등록할 미들웨어.
      *
-     * 둘 다 첫 줄에서 "위키 게시판인가" 를 보고 아니면 원본 응답을 그대로 돌려준다.
+     * 셋 다 첫 줄에서 "위키 게시판인가" 를 보고 아니면 원본 응답을 그대로 돌려준다.
      * 코어 게이트(`ExtensionMiddlewareGate`)가 라우트명을 `targets` 와 대조하므로
-     * 다른 API 응답에는 아예 실행되지 않는다.
+     * 다른 API 응답에는 아예 실행되지 않는다 — 관리자 게시물 API·홈 위젯 API 포함.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -146,6 +150,14 @@ class Plugin extends AbstractPlugin
                 'timing' => 'after_core',
                 'targets' => [
                     'api.modules.sirsoft-board.boards.posts.show',
+                ],
+            ],
+            [
+                'class' => WikiBoardListExtension::class,
+                'groups' => ['api'],
+                'timing' => 'after_core',
+                'targets' => [
+                    'api.modules.sirsoft-board.boards.posts.index',
                 ],
             ],
             [

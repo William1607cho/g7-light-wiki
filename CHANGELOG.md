@@ -37,6 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changes (up to 50 per save, most recently updated first; a warning is logged when the cap
   truncates the list). The front page post is always included.
 - Korean and English translations.
+- Wiki board post list is rewritten: with no search term it shows the front page post only
+  (untouched when no front page post is configured); with a search term it lists documents whose
+  normalized title contains the normalized term, ordered by `title_norm`, single characters
+  allowed, `%`/`_`/`\` matched literally. Items are produced by the core transformer
+  (`PostCollection` → `PostResource::toListArray()`) and `board`/`abilities`/page size are taken
+  from the core response, so item keys and value formats are unchanged. Notices are filtered out
+  with everything else. Non-200 core responses are passed through untouched.
 
 ### Changed
 
