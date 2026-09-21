@@ -36,8 +36,15 @@ use Plugins\G7\Light\Wiki\Support\WikiUrl;
  *
  * ## 조회 횟수
  *
- * 본문에 표기가 있으면 슬러그→게시판 ID 1회, 제목 일괄 조회 1회. 대문 글이면 자리표시가
- * 실제로 있을 때만 최근수정·색인 조회가 하나씩 더 붙는다.
+ * 본문에 표기가 있으면 슬러그→게시판 ID 1회, 제목 일괄 조회 1회(표기가 몇 개든 1회다).
+ * 자리표시가 있으면 **치환되는 자리표시 하나당 목록 조회 1회**가 더 붙는다
+ * (`[[#둘러보기]]` 는 두 단을 채우므로 2회). 같은 자리표시를 여러 번 쓰면 그만큼 는다.
+ * 자리표시가 없는 문서에는 렌더러를 만들지 않으므로 읽기 권한 판정도 돌지 않는다.
+ *
+ * ## 어느 글에서 자리표시가 채워지는가
+ *
+ * 1단계에서는 대문 글뿐이었다. 1.5단계부터는 **위키 게시판의 HTML 모드 문서라면 어디서든**
+ * 채운다. 후보에서는 대문 글과 "지금 그리는 그 문서 자신" 을 뺀다.
  */
 class RenderWikiLinksExtension
 {
@@ -97,15 +104,22 @@ class RenderWikiLinksExtension
         }
 
         $postId = (int) ($data['data']['id'] ?? 0);
-        $frontPostId = WikiBoardSettings::frontPostId($boardId);
-        $isFront = $frontPostId !== null && $frontPostId === $postId;
+
+        // 1.5단계: 자리표시는 대문 글 전용이 아니다. 자리표시가 실제로 있는 문서면
+        // 그 문서가 대문이든 아니든 채운다. 후보에서는 대문 글과 지금 그리는 문서 자신을 뺀다.
+        $renderer = $rewriter->hasPlaceholder()
+            ? $this->placeholderRenderer($request, $slug, $boardId, [
+                (int) (WikiBoardSettings::frontPostId($boardId) ?? 0),
+                $postId,
+            ])
+            : null;
 
         $rewritten = $rewriter->rewrite($this->resolver(
             $request,
             $slug,
             $boardId,
             $rewriter->linkTargets(),
-            $isFront ? $this->frontRenderer($request, $slug, $boardId, $frontPostId) : null,
+            $renderer,
         ));
 
         if ($rewritten === $body) {
@@ -172,16 +186,18 @@ class RenderWikiLinksExtension
     }
 
     /**
-     * 대문 글의 자리표시 렌더러 — 목록 조회는 자리표시가 실제로 있을 때만 일어난다.
+     * 자리표시 렌더러 — 호출부가 자리표시 존재를 확인한 뒤에만 만든다.
+     *
+     * 목록 조회는 그 자리표시가 실제로 치환될 때만 일어난다(공급자가 클로저라서).
      *
      * 랜덤 대상도 **여기서** 고른다. 플러그인 주소로 보내 서버가 302 로 고르게 하면 브라우저
      * 전체 이동에 토큰이 실리지 않아 로그인한 사람도 비회원으로 보인다. 이 응답은 토큰이
      * 실린 요청의 결과라 요청자 기준으로 고를 수 있다.
+     *
+     * @param  list<int>  $exclude  후보에서 뺄 글 ID (대문 글, 지금 그리는 문서 자신)
      */
-    private function frontRenderer(Request $request, string $slug, int $boardId, int $frontPostId): FrontPlaceholderRenderer
+    private function placeholderRenderer(Request $request, string $slug, int $boardId, array $exclude): FrontPlaceholderRenderer
     {
-        $exclude = [$frontPostId];
-
         return new FrontPlaceholderRenderer(
             $slug,
             WikiGate::canRead($slug, $request->user()),

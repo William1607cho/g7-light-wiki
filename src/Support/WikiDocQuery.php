@@ -159,6 +159,40 @@ final class WikiDocQuery
     }
 
     /**
+     * 본문에 자리표시(`[[#`)가 든 글의 ID — 봇 캐시를 비울 대상.
+     *
+     * 색인 표와 조인하지 **않는다.** 자리표시는 색인에 오르지 않는 글(답글 등)에서도
+     * 치환되므로, 그 글의 봇 캐시도 같이 낡는다.
+     *
+     * `[[#` 에는 LIKE 특수문자(`%`·`_`·`\`)가 없어 그대로 패턴에 넣어도 안전하다.
+     * 값은 바인딩으로 넘어간다.
+     *
+     * @param  int  $max  돌려줄 최대 건수
+     * @return array{ids: list<int>, truncated: bool} 잘렸으면 `truncated` 가 참
+     */
+    public static function placeholderPostIds(int $boardId, int $max): array
+    {
+        $max = max(1, $max);
+
+        $ids = DB::table((new Post)->getTable())
+            ->where('board_id', $boardId)
+            ->whereNull('deleted_at')
+            ->where('content', 'like', '%[[#%')
+            // 최근에 손댄 문서부터 비운다 — 상한에 걸려 잘릴 때 사람이 볼 확률이 높은 쪽을 남긴다.
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->limit($max + 1)
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+
+        return [
+            'ids' => array_slice($ids, 0, $max),
+            'truncated' => count($ids) > $max,
+        ];
+    }
+
+    /**
      * 조회 결과를 `{post_id, title}` 목록으로 옮긴다.
      *
      * @return list<array{post_id: int, title: string}>

@@ -82,6 +82,27 @@ final class HtmlLinkRewriter
     }
 
     /**
+     * 자리표시(`[[#…]]`) 표기가 하나라도 있는가.
+     *
+     * 호출부는 이것이 거짓이면 자리표시 렌더러를 **아예 만들지 않는다** — 렌더러를 만들면
+     * 읽기 권한 판정이 한 번 더 도므로, 자리표시가 없는 문서에는 그 비용을 얹지 않는다.
+     */
+    public function hasPlaceholder(): bool
+    {
+        $this->load();
+
+        foreach ($this->matches as $match) {
+            foreach ($match['tokens'] as $token) {
+                if ($token['kind'] === WikiMarkupParser::KIND_PLACEHOLDER) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * 표기를 바꿔 본문 HTML 을 돌려줍니다.
      *
      * @param  callable(array<string, mixed>): ?string  $resolver  토큰 → 대체 HTML.

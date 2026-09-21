@@ -33,8 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   even when it is not used.
 - `GET /api/plugins/g7-light-wiki/new` redirect endpoint.
 - `light-wiki:rebuild --board=<id> [--dry-run]` artisan command.
-- Front page bot cache invalidation when any document on the board changes.
+- Bot cache invalidation for placeholder-bearing documents when any document on the board
+  changes (up to 50 per save, most recently updated first; a warning is logged when the cap
+  truncates the list). The front page post is always included.
 - Korean and English translations.
+
+### Changed
+
+- Placeholders are no longer front-page-only: they are filled in on **any HTML-mode document**
+  of a wiki board. Candidates exclude the front page post and the document being rendered.
 
 ### Known limits
 
