@@ -28,8 +28,12 @@ final class WikiHtml
      * 로만** 준다. `style` 속성은 봇 SSR 정제기와 방문자 화면 DOMPurify 양쪽이 남긴다.
      *
      * 색은 **지정하지 않는다** — 상속을 받아야 다크 모드에서 깨지지 않는다.
+     *
+     * 크기는 `rem` 이 아니라 **`em`(본문 대비 배율)** 이다. 본문 글자 크기는 슈퍼팩 설정에서
+     * 오므로(윌리엄 확인), `rem` 으로 고정하면 본문을 키운 사이트에서 머리글이 본문보다
+     * 작아진다. `1.25em` 은 "본문의 1.25배" 라 설정을 따라간다. 여백도 같은 이유로 `em` 이다.
      */
-    private const LABEL_STYLE = 'font-weight:700;font-size:1.125rem;margin:1rem 0 .25rem';
+    private const LABEL_STYLE = 'font-weight:700;font-size:1.25em;margin:1em 0 .25em';
 
     /**
      * 있는 문서로 가는 링크.
