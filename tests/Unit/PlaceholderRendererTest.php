@@ -138,6 +138,47 @@ class PlaceholderRendererTest extends TestCase
         $this->assertStringContainsString('href="/board/test-wiki/11"', $html);
     }
 
+    public function test_색인은_기본_3열까지_펼친다(): void
+    {
+        $html = $this->renderer()->render($this->token(WikiMarkupParser::PLACEHOLDER_INDEX));
+
+        // 배치는 인라인 style 로만 준다. 열너비가 있어 좁은 화면에서는 저절로 줄어든다.
+        $this->assertStringContainsString('style="columns:16rem 3;column-gap:1.5rem"', $html);
+        // 자음 묶음은 열 경계에서 쪼개지지 않는다 — 묶음 수만큼 있어야 한다.
+        $this->assertSame(
+            substr_count($html, 'class="g7lw-index-group"'),
+            substr_count($html, 'style="break-inside:avoid"')
+        );
+        $this->assertSame(2, substr_count($html, 'style="break-inside:avoid"'));
+    }
+
+    public function test_색인_열_수는_인자로_받고_1_4_밖은_기본값이다(): void
+    {
+        foreach (['1' => 1, '2' => 2, '3' => 3, '4' => 4] as $argument => $columns) {
+            $html = $this->renderer()->render($this->token(WikiMarkupParser::PLACEHOLDER_INDEX, (string) $argument));
+
+            $this->assertStringContainsString('style="columns:16rem '.$columns.';column-gap:1.5rem"', $html);
+        }
+
+        // 범위 밖·숫자 아님·인자 없음은 오류를 내지 않고 기본값 3 이다.
+        foreach (['5', '9', '999', '0', '-1', 'abc', '', ' ', '2.5', null] as $argument) {
+            $html = $this->renderer()->render($this->token(WikiMarkupParser::PLACEHOLDER_INDEX, $argument));
+
+            $this->assertStringContainsString('style="columns:16rem 3;column-gap:1.5rem"', $html);
+        }
+    }
+
+    public function test_색인이_비어_있으면_다열_배치를_주지_않는다(): void
+    {
+        $source = $this->source();
+        $source->indexItems = [];
+
+        $html = $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_INDEX));
+
+        $this->assertStringNotContainsString('columns:', $html);
+        $this->assertStringContainsString('아직 문서가 없습니다.', $html);
+    }
+
     public function test_둘러보기는_2단_블록이다(): void
     {
         $source = $this->source();
@@ -344,6 +385,12 @@ class FakeDocListSource implements DocListSource
         ['post_id' => 32, 'title' => '랜덤 둘'],
     ];
 
+    /** @var list<array{id: int, title: string, title_norm: string}> */
+    public array $indexItems = [
+        ['id' => 11, 'title' => '가나다', 'title_norm' => '가나다'],
+        ['id' => 12, 'title' => 'Apple', 'title_norm' => 'apple'],
+    ];
+
     /** @var list<array{post_id: int, title: string, target: string, label: string}> */
     public array $timelineItems = [
         ['post_id' => 61, 'title' => '홍길동', 'target' => '1023', 'label' => '태어남'],
@@ -368,10 +415,7 @@ class FakeDocListSource implements DocListSource
 
     public function index(): array
     {
-        return [
-            ['id' => 11, 'title' => '가나다', 'title_norm' => '가나다'],
-            ['id' => 12, 'title' => 'Apple', 'title_norm' => 'apple'],
-        ];
+        return $this->indexItems;
     }
 
     public function randomOne(): ?int

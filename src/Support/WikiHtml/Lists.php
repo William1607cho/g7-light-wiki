@@ -14,6 +14,12 @@ use Plugins\G7\Light\Wiki\Support\WikiUrl;
  */
 final class Lists
 {
+    /** 색인 다단의 한 열 너비 — 둘러보기 단(`flex:1 1 16rem`)과 같은 기준이다. */
+    private const INDEX_COLUMN_WIDTH = '16rem';
+
+    /** 색인 다단의 열 사이 간격 — 둘러보기의 `gap:1.5rem` 과 같다. */
+    private const INDEX_COLUMN_GAP = '1.5rem';
+
     /**
      * 최근 수정 목록.
      *
@@ -84,22 +90,40 @@ final class Lists
     }
 
     /**
-     * 가나다 색인.
+     * 가나다 색인 — 자음 묶음을 여러 열에 나눠 담는다.
+     *
+     * 배치는 둘러보기와 같은 이유로 **인라인 style 로만** 준다(위 {@see tour()} 주석).
+     * 다만 수단은 flex 가 아니라 **CSS 다단**(`columns`)이다. 둘러보기는 단이 둘로 고정이지만
+     * 색인은 `[[#색인|N]]` 이 최대 열 수를 정하는데, flex 로는 "최대 N 열" 을 그대로 적을 수
+     * 없다(항목 너비로 에둘러야 한다). `columns:<열너비> <최대열수>` 는 넓으면 N 열까지,
+     * 좁아지면 열너비에 맞춰 저절로 줄어든다 — `@media` 없이 D2 가 그대로 선다.
+     *
+     * 열너비·간격은 둘러보기 단(`flex:1 1 16rem`, `gap:1.5rem`)과 같은 값을 쓴다.
+     * 묶음마다 `break-inside:avoid` 를 줘서 자음 제목과 그 목록이 열 경계에서 갈리지 않게 한다.
+     * `style` 속성은 봇 SSR 정제기와 방문자 화면 DOMPurify 양쪽이 남긴다(2026-09-22 코드 확인).
      *
      * @param  list<array{label: string, items: list<array{id: int, title: string, title_norm: string}>}>  $groups
+     * @param  int  $maxColumns  넓은 화면에서의 최대 열 수 (부르는 쪽이 1~4 로 걸러 넘긴다)
      */
-    public static function index(string $slug, array $groups, string $otherLabel, string $emptyLabel): string
-    {
+    public static function index(
+        string $slug,
+        array $groups,
+        string $otherLabel,
+        string $emptyLabel,
+        int $maxColumns
+    ): string {
         if ($groups === []) {
             return WikiHtml::emptyNotice('g7lw-index', $emptyLabel);
         }
 
-        $html = '<div class="g7lw-index">';
+        $html = '<div class="g7lw-index" style="columns:'.self::INDEX_COLUMN_WIDTH.' '.$maxColumns
+            .';column-gap:'.self::INDEX_COLUMN_GAP.'">';
 
         foreach ($groups as $group) {
             $label = $group['label'] === WikiIndexBuilder::OTHER ? $otherLabel : $group['label'];
 
-            $html .= '<div class="g7lw-index-group"><h3 class="g7lw-index-label" style="'.WikiHtml::LABEL_STYLE.'">'
+            $html .= '<div class="g7lw-index-group" style="break-inside:avoid">'
+                .'<h3 class="g7lw-index-label" style="'.WikiHtml::LABEL_STYLE.'">'
                 .WikiHtml::e($label).'</h3><ul>';
 
             foreach ($group['items'] as $item) {

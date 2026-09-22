@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from every list shown to others.
 - Bot cache invalidation now also covers the link targets, the category documents and — when an
   alias changes — the documents linking through that alias, capped at 100 per save.
+- The index `[[#색인]]` now lays its consonant groups out in up to three columns that shrink to
+  two and then one on narrower screens; `[[#색인|N]]` sets the maximum (1–4, anything else 3).
 
 ### Changed
 
