@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Placeholder headings size with the body text (`1.25em`) instead of a fixed `1.125rem`, so a
   site that enlarges its body text keeps the heading proportional.
+- `[[#둘러보기]]` now lists **recently edited** documents in its left column instead of recently
+  created ones, and each column heading is a link to the matching board listing
+  (`/board/<slug>?sort_by=g7lw-recent` · `?sort_by=g7lw-random`). Recently created documents
+  remain available through `[[#최근작성]]`.
 - 내부 구조 정리(동작 변경 없음).
 
 ### Added (1.5단계까지)

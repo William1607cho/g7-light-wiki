@@ -54,6 +54,17 @@ final class WikiHtml
     }
 
     /**
+     * 자리표시 머리글을 감싸는 링크 — 지금은 둘러보기의 단 제목이 쓴다.
+     *
+     * 문서 링크(`g7lw-link`)와 **class 를 나눈다.** 이것은 문서가 아니라 목록 화면으로 가는
+     * 길이고, 둘을 같은 class 로 두면 "문서 링크 수" 를 세는 구조 측정이 제목까지 함께 센다.
+     */
+    public static function sectionLink(string $url, string $label): string
+    {
+        return '<a class="g7lw-section-link" href="'.self::e($url).'">'.self::e($label).'</a>';
+    }
+
+    /**
      * 없는 문서 — 글쓰기 권한이 있는 요청자에게는 작성 화면으로 가는 빨간 링크.
      */
     public static function newLink(string $url, string $label): string

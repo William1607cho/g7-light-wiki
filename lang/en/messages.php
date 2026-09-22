@@ -11,7 +11,7 @@ return [
         'random' => 'Random document',
         'other' => 'Other',
         'empty' => 'No documents yet.',
-        'tour_created' => 'Recently created',
+        'tour_recent' => 'Recently edited',
         'tour_random' => 'Random documents',
     ],
     'doc' => [

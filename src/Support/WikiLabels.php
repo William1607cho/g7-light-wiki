@@ -29,7 +29,7 @@ final class WikiLabels
         'front.random',
         'front.other',
         'front.empty',
-        'front.tour_created',
+        'front.tour_recent',
         'front.tour_random',
         'doc.categories',
         'doc.category_members',
@@ -89,10 +89,10 @@ final class WikiLabels
         return $this->get('front.empty');
     }
 
-    /** 둘러보기 왼쪽 단 머리글 */
-    public function tourCreated(): string
+    /** 둘러보기 왼쪽 단 머리글 (최근 수정) */
+    public function tourRecent(): string
     {
-        return $this->get('front.tour_created');
+        return $this->get('front.tour_recent');
     }
 
     /** 둘러보기 오른쪽 단 머리글 */

@@ -190,11 +190,33 @@ class PlaceholderRendererTest extends TestCase
         $this->assertSame(2, substr_count($html, 'style="flex:1 1 16rem;min-width:0"'));
         // 머리글 2개. 강조도 인라인 style 로만 준다(색은 상속 — 다크 모드).
         $this->assertSame(2, substr_count($html, '<h3 class="g7lw-tour-label" style="'));
-        $this->assertStringContainsString('최근 작성 문서', $html);
-        // 왼쪽은 최근 작성, 오른쪽은 랜덤.
-        $this->assertTrue(strpos($html, 'g7lw-created') < strpos($html, 'g7lw-random-list'));
-        $this->assertSame(3, $source->askedCreated);
+        $this->assertStringContainsString('최근 수정', $html);
+        // 왼쪽은 최근 **수정**, 오른쪽은 랜덤. 최근 작성은 묻지도 않는다.
+        $this->assertTrue(strpos($html, 'g7lw-recent') < strpos($html, 'g7lw-random-list'));
+        $this->assertStringNotContainsString('g7lw-created', $html);
+        $this->assertSame(3, $source->askedRecent);
+        $this->assertSame(0, $source->askedCreated);
         $this->assertSame(3, $source->askedRandom);
+    }
+
+    public function test_둘러보기_단_제목은_목록_화면_링크다(): void
+    {
+        $html = $this->renderer()->render($this->token(WikiMarkupParser::PLACEHOLDER_TOUR));
+
+        // 제목 2개가 각각 상대 경로 목록 주소로 간다. 호스트는 박지 않는다.
+        $this->assertSame(2, substr_count($html, '<a class="g7lw-section-link" href="/board/test-wiki?sort_by=g7lw-'));
+        $this->assertStringContainsString(
+            '<a class="g7lw-section-link" href="/board/test-wiki?sort_by=g7lw-recent">최근 수정</a>',
+            $html
+        );
+        $this->assertStringContainsString(
+            '<a class="g7lw-section-link" href="/board/test-wiki?sort_by=g7lw-random">랜덤 문서</a>',
+            $html
+        );
+        // 제목 링크는 문서 링크 class 를 쓰지 않는다(구조 측정이 둘을 섞지 않게).
+        $this->assertStringNotContainsString('class="g7lw-section-link g7lw-link"', $html);
+        // 절대 주소는 하나도 없다.
+        $this->assertStringNotContainsString('href="http', $html);
     }
 
     public function test_둘러보기_개수는_기본_5_다(): void
@@ -202,8 +224,9 @@ class PlaceholderRendererTest extends TestCase
         $source = $this->source();
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_TOUR));
 
-        $this->assertSame(WikiDocQuery::TOUR_DEFAULT, $source->askedCreated);
+        $this->assertSame(WikiDocQuery::TOUR_DEFAULT, $source->askedRecent);
         $this->assertSame(WikiDocQuery::TOUR_DEFAULT, $source->askedRandom);
+        $this->assertSame(5, WikiDocQuery::TOUR_DEFAULT);
     }
 
     public function test_분류_목록은_이름이_없으면_원문을_그대로_둔다(): void
@@ -330,7 +353,7 @@ class PlaceholderRendererTest extends TestCase
             'front.random' => '랜덤 문서',
             'front.other' => '기타',
             'front.empty' => '아직 문서가 없습니다.',
-            'front.tour_created' => '최근 작성 문서',
+            'front.tour_recent' => '최근 수정',
             'front.tour_random' => '랜덤 문서',
             'doc.categories' => '분류',
             'doc.category_members' => '이 분류에 속한 문서',

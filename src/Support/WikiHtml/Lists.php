@@ -64,7 +64,7 @@ final class Lists
     }
 
     /**
-     * 둘러보기 — 왼쪽 "최근 작성", 오른쪽 "랜덤" 2단 블록.
+     * 둘러보기 — 왼쪽 "최근 수정", 오른쪽 "랜덤" 2단 블록.
      *
      * 배치는 **인라인 style 로만** 준다. 템플릿 빌드 CSS 에 이 플러그인 전용 class 가 없어
      * `g7lw-…` 만으로는 한 줄로 서지 않기 때문이다. `style` 속성은 봇 SSR 정제기
@@ -72,20 +72,31 @@ final class Lists
      *
      * 좁은 화면에서는 `flex-wrap:wrap` + 단의 `flex-basis:16rem` 이 자동으로 1단으로 접는다.
      *
-     * @param  list<array{post_id: int, title: string}>  $created  왼쪽 단 항목
+     * 각 단 제목은 그 단을 통째로 볼 수 있는 **목록 화면 링크**다. 주소는 {@see WikiUrl::boardList()}
+     * 한 곳에서 만든다.
+     *
+     * @param  list<array{post_id: int, title: string}>  $recent  왼쪽 단 항목 (최근 수정)
      * @param  list<array{post_id: int, title: string}>  $random  오른쪽 단 항목
      */
     public static function tour(
         string $slug,
-        array $created,
+        array $recent,
         array $random,
-        string $createdLabel,
+        string $recentLabel,
         string $randomLabel,
         string $emptyLabel
     ): string {
         return '<div class="g7lw-tour" style="display:flex;flex-wrap:wrap;gap:1.5rem">'
-            .self::tourColumn($createdLabel, self::created($slug, $created, $emptyLabel))
-            .self::tourColumn($randomLabel, self::random($slug, $random, $emptyLabel))
+            .self::tourColumn(
+                $recentLabel,
+                WikiUrl::boardList($slug, WikiUrl::SORT_RECENT),
+                self::recent($slug, $recent, $emptyLabel)
+            )
+            .self::tourColumn(
+                $randomLabel,
+                WikiUrl::boardList($slug, WikiUrl::SORT_RANDOM),
+                self::random($slug, $random, $emptyLabel)
+            )
             .'</div>';
     }
 
@@ -173,12 +184,13 @@ final class Lists
     }
 
     /**
-     * 둘러보기의 한 단.
+     * 둘러보기의 한 단 — 제목은 `$href` 로 가는 링크다.
      */
-    private static function tourColumn(string $label, string $body): string
+    private static function tourColumn(string $label, string $href, string $body): string
     {
         return '<div class="g7lw-tour-col" style="flex:1 1 16rem;min-width:0">'
-            .'<h3 class="g7lw-tour-label" style="'.WikiHtml::LABEL_STYLE.'">'.WikiHtml::e($label).'</h3>'
+            .'<h3 class="g7lw-tour-label" style="'.WikiHtml::LABEL_STYLE.'">'
+            .WikiHtml::sectionLink($href, $label).'</h3>'
             .$body
             .'</div>';
     }
