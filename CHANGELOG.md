@@ -33,8 +33,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   alias changes — the documents linking through that alias, capped at 100 per save.
 - The index `[[#색인]]` now lays its consonant groups out in up to three columns that shrink to
   two and then one on narrower screens; `[[#색인|N]]` sets the maximum (1–4, anything else 3).
+- Two listing modes on the board listing, reached from the `[[#둘러보기]]` column headings.
+  `?sort_by=g7lw-recent` lists every document by last edit, newest first, paginated with the
+  board's own page size. `?sort_by=g7lw-random` draws 10 distinct documents and stays on a
+  single page — a `page` parameter is ignored, because a fresh draw makes page 2 meaningless.
+  Any other `sort_by` value keeps the previous behaviour (the front page post alone), and a
+  search keyword still wins over both modes.
+- The random listing is rate limited per requester and board with a 3 second cooldown. A repeat
+  request inside the cooldown is answered with the previous draw rather than an error, so
+  hammering "draw again" never replaces the listing with an error screen. The reused ids are
+  re-checked for visibility on every request.
 
 ### Changed
+
+- The board listing, its title search and both new modes now apply the same conditions the core
+  user listing applies: replies (`parent_id`) and notices (`is_notice`) are excluded, deleted
+  posts stay out, and the core permission scope helper decides the rest. Secret and blinded
+  documents remain in the listing with their titles shown and only the preview masked — that is
+  what the core does. The admin "include deleted" toggle (`?del=1`) is still not honoured.
+- The title search now filters before it truncates. Previously the 2000 row cap was applied to
+  the raw index rows and the visibility filter ran afterwards, so a document the requester was
+  allowed to see could be pushed past the cap, and the "at least N" total was counted before
+  filtering.
+- Internal: `WikiDocSearchQuery` becomes `WikiDocListSource` — it is no longer only the title
+  search but the source of every board listing mode. The board listing's row cap moves with it
+  (`WikiDocListSource::LIST_LIMIT`) instead of borrowing the index placeholder's
+  `WikiDocListQuery::INDEX_LIMIT`; the two values are equal today but no longer coupled.
+  New: `Doc\ListMode` (reads the mode from `sort_by`) and `Doc\RandomDrawCache` (the cooldown).
 
 - Placeholder headings size with the body text (`1.25em`) instead of a fixed `1.125rem`, so a
   site that enlarges its body text keeps the heading proportional.
