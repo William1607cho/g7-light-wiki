@@ -8,9 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Modules\Sirsoft\Board\Http\Resources\PostCollection;
-use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardListQuery;
-use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
 
 /**
@@ -18,27 +16,17 @@ use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
  *
  * 미들웨어에서 떼어 냈다. 미들웨어는 "위키 게시판인가" 를 보고 이쪽으로 넘기는 일만 한다.
  *
- * ## 무엇으로 바꾸는가
+ * ## 무엇을 쥐고 무엇을 넘기는가
  *
- * | 요청 | 결과 |
- * |---|---|
- * | 검색어 있음 | 정규화 제목에 정규화 검색어가 **들어 있는** 문서. `title_norm` 오름차순 |
- * | `?sort_by=g7lw-recent` | **최근 수정순** 전체 문서. 페이지 넘김 있음 |
- * | `?sort_by=g7lw-random` | **무작위** 문서 `min(20, 한 쪽 개수)`건. **1쪽 고정** |
- * | 그 밖(모드 없음·허용 밖 값) | **대문 글 1건**만 담은 목록. 대문이 지정돼 있지 않으면 원본 그대로 |
+ * **어느 문서를 늘어놓을지는 {@see DocListTarget} 이 고른다** — 검색·최근 수정·무작위·대문의
+ * 규칙과 "검색어가 모드보다 먼저다" 는 전부 그쪽에 있다. 이 클래스는 고른 결과를 받아
+ * **응답을 되쓰는 일**만 한다.
  *
  * ## 갈아 끼우지 않아도 `board.wiki` 는 싣는다
  *
  * 위키 게시판이면 **어느 경로로 나가든** 게시판 정보에 {@see WikiBoardFlag} 의 칸을 얹는다.
  * 대문이 지정되지 않아 목록을 그대로 두는 경우도 마찬가지다 — 값이 들쭉날쭉하면 같은
  * 게시판의 화면이 요청마다 달라진다. 위키가 **아닌** 게시판에는 미들웨어가 여기까지 오지 않는다.
- *
- * **검색어가 모드보다 먼저다.** 화면에 검색창이 있고, 사용자가 방금 친 것이 검색어다.
- * 검색어가 있으면 `sort_by` 는 무시한다(페이지 넘김도 검색 결과 기준으로 돈다).
- *
- * 한 글자 검색도 받는다. 검색 대상 필드(제목·내용·작성자)를 무엇으로 고르든 **제목 검색**으로
- * 처리한다 — 위키에서 제목은 문서 이름이고, 코어 사용자 목록은 어차피 `search_field` 를
- * `all` 로 고정한다.
  *
  * 공지 글도 함께 걸러진다. 코어는 공지를 별도 목록이 아니라 같은 `data` 배열 앞에 섞어
  * 보내므로(`PostRepository::buildSortedPostList()`), 목록을 갈아 끼우면 공지도 빠진다.
@@ -63,11 +51,16 @@ use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
  */
 final class DocListRenderer
 {
+    /** 어느 문서를 늘어놓을지 고르는 쪽 */
+    private readonly DocListTarget $target;
+
     public function __construct(
         private readonly string $slug,
         private readonly int $boardId,
         private readonly Request $request,
-    ) {}
+    ) {
+        $this->target = new DocListTarget($slug, $boardId, $request);
+    }
 
     public function apply(JsonResponse $response): JsonResponse
     {
@@ -79,7 +72,7 @@ final class DocListRenderer
             return $response;
         }
 
-        $mode = $this->mode();
+        $mode = $this->target->mode();
 
         // 갈아 끼우지 못해도 깃발은 싣는다(위 "갈아 끼우지 않아도" 참조).
         $payload = $this->rebuild($payload, $mode) ?? $payload;
@@ -114,7 +107,7 @@ final class DocListRenderer
             return null;
         }
 
-        $target = $this->targetIds($mode, $perPage);
+        $target = $this->target->targetIds($mode, $perPage);
 
         if ($target === null) {
             return null;
@@ -149,148 +142,6 @@ final class DocListRenderer
         $payload['pagination'] = $built['pagination'];
 
         return $payload;
-    }
-
-    /**
-     * 이 요청이 그릴 모드 — 검색어가 있으면 모드는 없는 것으로 본다.
-     *
-     * 검색 결과는 페이지 넘김이 정상으로 돌아야 하므로, 무작위 모드의 "1쪽 고정" 이
-     * 검색 결과에 걸리면 안 된다.
-     */
-    private function mode(): string
-    {
-        return $this->rawSearch() === '' ? ListMode::fromRequest($this->request) : ListMode::NONE;
-    }
-
-    /**
-     * 이 요청이 보여 줄 문서의 글 ID 목록.
-     *
-     * `null` 은 "원본 응답을 그대로 두라" 는 뜻이다 — 대문이 지정되지 않았거나,
-     * 검색어가 정규화 후 빈 문자열이 되는 경우다(빈 검색어로 전부 훑지 않는다).
-     *
-     * @param  int  $perPage  이 요청의 한 쪽 개수 — 무작위 개수의 상한으로 쓰인다
-     * @return array{ids: list<int>, truncated: bool}|null
-     */
-    private function targetIds(string $mode, int $perPage): ?array
-    {
-        $search = $this->rawSearch();
-
-        if ($search !== '') {
-            return $this->searchIds($search);
-        }
-
-        return match ($mode) {
-            ListMode::RECENT => $this->recentIds(),
-            ListMode::RANDOM => $this->randomIds($perPage),
-            default => $this->frontIds(),
-        };
-    }
-
-    /**
-     * 제목 검색 결과.
-     *
-     * 상한 판정을 **거른 뒤 건수**로 한다 — 조회가 이미 노출 조건을 걸고 자르기 때문이다.
-     *
-     * @return array{ids: list<int>, truncated: bool}|null
-     */
-    private function searchIds(string $search): ?array
-    {
-        $normalized = TitleNormalizer::normalize($search);
-
-        if ($normalized === '') {
-            return null;
-        }
-
-        $found = WikiBoardListQuery::searchPostIds(
-            $this->slug,
-            $this->boardId,
-            $normalized,
-            WikiBoardListQuery::LIST_LIMIT
-        );
-
-        return [
-            'ids' => $found,
-            'truncated' => count($found) >= WikiBoardListQuery::LIST_LIMIT,
-        ];
-    }
-
-    /**
-     * 최근 수정순 전체 문서.
-     *
-     * @return array{ids: list<int>, truncated: bool}
-     */
-    private function recentIds(): array
-    {
-        $ids = WikiBoardListQuery::recentPostIds(
-            $this->slug,
-            $this->boardId,
-            WikiBoardListQuery::LIST_LIMIT
-        );
-
-        return [
-            'ids' => $ids,
-            'truncated' => count($ids) >= WikiBoardListQuery::LIST_LIMIT,
-        ];
-    }
-
-    /**
-     * 무작위 문서 — 쿨다운 안이면 직전에 뽑은 것을 그대로 쓴다.
-     *
-     * 되쓰는 id 도 노출 판정을 다시 받는다. 3초 사이에 글이 지워지거나 권한이 바뀔 수 있고,
-     * 그때 안 보여야 할 문서를 캐시가 되살리면 안 된다.
-     *
-     * **뽑는 개수는 한 쪽에 들어가는 만큼이다**({@see WikiBoardListQuery::randomCount()}).
-     * 개수는 쿨다운 캐시 키에도 들어간다 — 한 쪽 개수가 다른 두 화면이 서로의 직전 결과를
-     * 되쓰면 안 된다.
-     *
-     * @return array{ids: list<int>, truncated: bool}
-     */
-    private function randomIds(int $perPage): array
-    {
-        $count = WikiBoardListQuery::randomCount($perPage);
-
-        $ids = RandomDrawCache::remember(
-            $this->boardId,
-            $this->request,
-            $count,
-            fn (): array => WikiBoardListQuery::randomPostIds(
-                $this->slug,
-                $this->boardId,
-                $count
-            )
-        );
-
-        return [
-            'ids' => WikiBoardListQuery::visiblePostIds($this->slug, $this->boardId, $ids),
-            'truncated' => false,
-        ];
-    }
-
-    /**
-     * 대문 글 1건 — 모드도 검색어도 없을 때의 목록.
-     *
-     * @return array{ids: list<int>, truncated: bool}|null
-     */
-    private function frontIds(): ?array
-    {
-        $frontPostId = WikiBoardSettings::frontPostId($this->boardId);
-
-        if ($frontPostId === null) {
-            return null;
-        }
-
-        return [
-            'ids' => WikiBoardListQuery::visiblePostIds($this->slug, $this->boardId, [$frontPostId]),
-            'truncated' => false,
-        ];
-    }
-
-    /** 요청의 검색어 원문 (앞뒤 공백만 털어 낸 것) */
-    private function rawSearch(): string
-    {
-        $search = $this->request->query('search');
-
-        return is_string($search) ? trim($search) : '';
     }
 
     /**

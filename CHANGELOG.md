@@ -57,6 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Internal tidy-up, no behaviour change: picking which documents a listing shows moved out of
+  `Doc\DocListRenderer` into a new `Doc\DocListTarget`. The renderer now only rewrites the
+  response; the rules for search, recent, random and the front page — including "a search
+  keyword beats the mode" — all live in one place next to each other.
 - Wiki post detail responses are now rewritten even when the body is left untouched, so that
   `board.wiki` is present on every document of a wiki board. Previously the response object was
   returned as-is whenever the rewrite produced no change — which would have made the field
