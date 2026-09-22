@@ -12,7 +12,7 @@ use Plugins\G7\Light\Wiki\Support\RefIndexer;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 use Plugins\G7\Light\Wiki\Support\WikiCategory;
-use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
+use Plugins\G7\Light\Wiki\Support\WikiDocLookup;
 use Plugins\G7\Light\Wiki\Support\WikiRefQuery;
 
 /**
@@ -149,7 +149,7 @@ class PostIndexListener implements HookListenerInterface
             return;
         }
 
-        $found = WikiDocQuery::placeholderPostIds($boardId, self::CACHE_REFRESH_MAX);
+        $found = WikiDocLookup::placeholderPostIds($boardId, self::CACHE_REFRESH_MAX);
         $targets = $found['ids'];
 
         if ($found['truncated']) {
@@ -243,7 +243,7 @@ class PostIndexListener implements HookListenerInterface
 
         // ① 링크 대상 — 실제 제목인 것.
         if ($links !== []) {
-            foreach (WikiDocQuery::resolve($boardId, $links) as $doc) {
+            foreach (WikiDocLookup::resolve($boardId, $links) as $doc) {
                 $ids[] = (int) $doc['post_id'];
             }
 
@@ -260,7 +260,7 @@ class PostIndexListener implements HookListenerInterface
                 $categories,
             );
 
-            foreach (WikiDocQuery::resolve($boardId, $titles) as $doc) {
+            foreach (WikiDocLookup::resolve($boardId, $titles) as $doc) {
                 $ids[] = (int) $doc['post_id'];
             }
         }

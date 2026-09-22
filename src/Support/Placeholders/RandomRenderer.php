@@ -2,7 +2,7 @@
 
 namespace Plugins\G7\Light\Wiki\Support\Placeholders;
 
-use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
+use Plugins\G7\Light\Wiki\Support\WikiDocListQuery;
 use Plugins\G7\Light\Wiki\Support\WikiHtml;
 use Plugins\G7\Light\Wiki\Support\WikiHtml\Lists;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
@@ -31,7 +31,7 @@ final class RandomRenderer implements Renderer
 
     public function render(string $name, mixed $argument): ?string
     {
-        $count = Limit::optional($argument, WikiDocQuery::RANDOM_MAX);
+        $count = Limit::optional($argument, WikiDocListQuery::RANDOM_MAX);
 
         if ($count !== null && $count >= 2) {
             return Lists::random($this->slug, $this->source->randomMany($count), $this->labels->empty());

@@ -234,7 +234,7 @@ final class WikiRefQuery
 
         $normalized = TitleNormalizer::normalize($docName);
 
-        $doc = WikiDocQuery::resolve($boardId, [$normalized])[$normalized]
+        $doc = WikiDocLookup::resolve($boardId, [$normalized])[$normalized]
             ?? self::aliasOwners($boardId, [$normalized])[$normalized]
             ?? null;
 
@@ -328,7 +328,7 @@ final class WikiRefQuery
     /**
      * 남에게 보여도 되는 표기만 남기는 뼈대 — 표기 표에 문서 색인과 코어 글 표를 붙인다.
      *
-     * 빼는 것은 {@see WikiDocQuery} 의 후보 조건과 같다: 삭제·비게시·비밀글·답글.
+     * 빼는 것은 {@see WikiDocListQuery} 의 후보 조건과 같다: 삭제·비게시·비밀글·답글.
      */
     private static function visible(int $boardId, string $kind): Builder
     {

@@ -10,7 +10,7 @@ use Plugins\G7\Light\Wiki\Models\WikiRef;
 /**
  * "남에게 보여도 되는 문서" 의 조건이 사는 **한 곳**.
  *
- * 이 조건은 두 조회 계층이 함께 쓴다 — {@see WikiDocQuery} 의 후보 조회와
+ * 이 조건은 두 조회 계층이 함께 쓴다 — {@see WikiDocListQuery} 의 후보 조회와
  * {@see WikiRefQuery} 의 표기 조회다. 전에는 두 곳에 같은 네 줄이 따로 적혀 있어서,
  * 한쪽만 고치면 비밀글이 한쪽 목록에서만 새는 모양이 될 수 있었다.
  *

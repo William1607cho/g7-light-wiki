@@ -10,7 +10,8 @@ use Illuminate\Pagination\Paginator;
 use Modules\Sirsoft\Board\Http\Resources\PostCollection;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
-use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
+use Plugins\G7\Light\Wiki\Support\WikiDocListQuery;
+use Plugins\G7\Light\Wiki\Support\WikiDocSearchQuery;
 use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
 
 /**
@@ -48,7 +49,7 @@ use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
 final class DocListRenderer
 {
     /** 한 번에 다룰 문서의 최대 수 (색인 자리표시와 같은 상한) */
-    private const MAX_DOCS = WikiDocQuery::INDEX_LIMIT;
+    private const MAX_DOCS = WikiDocListQuery::INDEX_LIMIT;
 
     public function __construct(
         private readonly string $slug,
@@ -132,7 +133,7 @@ final class DocListRenderer
             }
 
             return [
-                'ids' => WikiDocQuery::visiblePostIds($this->slug, [$frontPostId]),
+                'ids' => WikiDocSearchQuery::visiblePostIds($this->slug, [$frontPostId]),
                 'truncated' => false,
             ];
         }
@@ -143,10 +144,10 @@ final class DocListRenderer
             return null;
         }
 
-        $found = WikiDocQuery::searchPostIds($this->boardId, $normalized, self::MAX_DOCS);
+        $found = WikiDocSearchQuery::searchPostIds($this->boardId, $normalized, self::MAX_DOCS);
 
         return [
-            'ids' => WikiDocQuery::visiblePostIds($this->slug, $found),
+            'ids' => WikiDocSearchQuery::visiblePostIds($this->slug, $found),
             'truncated' => count($found) >= self::MAX_DOCS,
         ];
     }

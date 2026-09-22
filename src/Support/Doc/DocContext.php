@@ -8,7 +8,7 @@ use Plugins\G7\Light\Wiki\Support\Placeholders\PlaceholderRenderer;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 use Plugins\G7\Light\Wiki\Support\WikiCategory;
-use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
+use Plugins\G7\Light\Wiki\Support\WikiDocLookup;
 use Plugins\G7\Light\Wiki\Support\WikiHtml;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
@@ -79,7 +79,7 @@ final class DocContext
             array_values($categoryTitles),
         )));
 
-        $found = $ask === [] ? [] : WikiDocQuery::resolve($target->boardId, $ask);
+        $found = $ask === [] ? [] : WikiDocLookup::resolve($target->boardId, $ask);
 
         // ── 조회 2: 별칭. 제목으로 못 찾은 이름만 묻는다.
         $unresolved = array_values(array_unique(array_filter(

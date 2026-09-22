@@ -2,7 +2,7 @@
 
 namespace Plugins\G7\Light\Wiki\Support\Placeholders;
 
-use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
+use Plugins\G7\Light\Wiki\Support\WikiDocListQuery;
 use Plugins\G7\Light\Wiki\Support\WikiHtml\Lists;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
@@ -35,7 +35,7 @@ final class RecentRenderer implements Renderer
             return Lists::created(
                 $this->slug,
                 $this->source->created(
-                    Limit::orDefault($argument, WikiDocQuery::CREATED_DEFAULT, WikiDocQuery::RECENT_MAX)
+                    Limit::orDefault($argument, WikiDocListQuery::CREATED_DEFAULT, WikiDocListQuery::RECENT_MAX)
                 ),
                 $this->labels->empty(),
             );
@@ -44,7 +44,7 @@ final class RecentRenderer implements Renderer
         return Lists::recent(
             $this->slug,
             $this->source->recent(
-                Limit::orDefault($argument, WikiDocQuery::RECENT_DEFAULT, WikiDocQuery::RECENT_MAX)
+                Limit::orDefault($argument, WikiDocListQuery::RECENT_DEFAULT, WikiDocListQuery::RECENT_MAX)
             ),
             $this->labels->empty(),
         );

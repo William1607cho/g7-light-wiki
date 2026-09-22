@@ -5,7 +5,7 @@ namespace Plugins\G7\Light\Wiki\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use Plugins\G7\Light\Wiki\Support\Placeholders\DocListSource;
 use Plugins\G7\Light\Wiki\Support\Placeholders\PlaceholderRenderer;
-use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
+use Plugins\G7\Light\Wiki\Support\WikiDocListQuery;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
 
@@ -35,16 +35,16 @@ class PlaceholderRendererTest extends TestCase
     {
         $source = $this->source();
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_RECENT));
-        $this->assertSame(WikiDocQuery::RECENT_DEFAULT, $source->askedRecent);
+        $this->assertSame(WikiDocListQuery::RECENT_DEFAULT, $source->askedRecent);
 
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_RECENT, '20'));
         $this->assertSame(20, $source->askedRecent);
 
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_RECENT, '999'));
-        $this->assertSame(WikiDocQuery::RECENT_MAX, $source->askedRecent);
+        $this->assertSame(WikiDocListQuery::RECENT_MAX, $source->askedRecent);
 
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_RECENT, 'abc'));
-        $this->assertSame(WikiDocQuery::RECENT_DEFAULT, $source->askedRecent);
+        $this->assertSame(WikiDocListQuery::RECENT_DEFAULT, $source->askedRecent);
     }
 
     public function test_최근작성은_별도_class_의_목록을_만든다(): void
@@ -63,13 +63,13 @@ class PlaceholderRendererTest extends TestCase
     {
         $source = $this->source();
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_RECENT_CREATED));
-        $this->assertSame(WikiDocQuery::CREATED_DEFAULT, $source->askedCreated);
+        $this->assertSame(WikiDocListQuery::CREATED_DEFAULT, $source->askedCreated);
 
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_RECENT_CREATED, '3'));
         $this->assertSame(3, $source->askedCreated);
 
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_RECENT_CREATED, '999'));
-        $this->assertSame(WikiDocQuery::RECENT_MAX, $source->askedCreated);
+        $this->assertSame(WikiDocListQuery::RECENT_MAX, $source->askedCreated);
     }
 
     public function test_랜덤은_치환_시점에_고른_문서로_가는_일반_링크다(): void
@@ -224,9 +224,9 @@ class PlaceholderRendererTest extends TestCase
         $source = $this->source();
         $this->renderer($source)->render($this->token(WikiMarkupParser::PLACEHOLDER_TOUR));
 
-        $this->assertSame(WikiDocQuery::TOUR_DEFAULT, $source->askedRecent);
-        $this->assertSame(WikiDocQuery::TOUR_DEFAULT, $source->askedRandom);
-        $this->assertSame(5, WikiDocQuery::TOUR_DEFAULT);
+        $this->assertSame(WikiDocListQuery::TOUR_DEFAULT, $source->askedRecent);
+        $this->assertSame(WikiDocListQuery::TOUR_DEFAULT, $source->askedRandom);
+        $this->assertSame(5, WikiDocListQuery::TOUR_DEFAULT);
     }
 
     public function test_분류_목록은_이름이_없으면_원문을_그대로_둔다(): void

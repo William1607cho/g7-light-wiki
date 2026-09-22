@@ -43,6 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`/board/<slug>?sort_by=g7lw-recent` · `?sort_by=g7lw-random`). Recently created documents
   remain available through `[[#최근작성]]`.
 - 내부 구조 정리(동작 변경 없음).
+- Internal: `WikiDocQuery` is split by responsibility into `WikiDocLookup` (resolve a title or
+  a placeholder-bearing body to a post), `WikiDocListQuery` (the placeholder list sources and
+  their count constants) and `WikiDocSearchQuery` (the board listing's title search and
+  visibility filter). Queries, ordering and call signatures are unchanged.
 
 ### Added (1.5단계까지)
 

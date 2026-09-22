@@ -15,7 +15,7 @@ use Plugins\G7\Light\Wiki\Models\WikiDoc;
  * 문서로 세지 않는다 — 세면 답글 두 개가 서로 제목 충돌로 막힌다.
  *
  * 비밀글·블라인드 글은 색인에 **남긴다**. 제목의 임자는 그 글이고, 목록에 보일지는
- * 조회할 때 따로 거른다({@see WikiDocQuery}).
+ * 조회할 때 따로 거른다({@see WikiDocListQuery}).
  */
 final class DocIndexer
 {

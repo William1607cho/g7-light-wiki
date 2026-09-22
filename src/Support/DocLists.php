@@ -49,27 +49,27 @@ final class DocLists implements DocListSource
 
     public function recent(int $limit): array
     {
-        return $this->recentMemo[$limit] ??= WikiDocQuery::recent($this->boardId, $this->exclude, $limit);
+        return $this->recentMemo[$limit] ??= WikiDocListQuery::recent($this->boardId, $this->exclude, $limit);
     }
 
     public function created(int $limit): array
     {
-        return $this->createdMemo[$limit] ??= WikiDocQuery::recentCreated($this->boardId, $this->exclude, $limit);
+        return $this->createdMemo[$limit] ??= WikiDocListQuery::recentCreated($this->boardId, $this->exclude, $limit);
     }
 
     public function index(): array
     {
-        return $this->indexMemo ??= WikiDocQuery::forIndex($this->boardId, $this->exclude);
+        return $this->indexMemo ??= WikiDocListQuery::forIndex($this->boardId, $this->exclude);
     }
 
     public function randomOne(): ?int
     {
-        return WikiDocQuery::randomPostId($this->boardId, $this->exclude);
+        return WikiDocListQuery::randomPostId($this->boardId, $this->exclude);
     }
 
     public function randomMany(int $limit): array
     {
-        return WikiDocQuery::randomDocs($this->boardId, $this->exclude, $limit);
+        return WikiDocListQuery::randomDocs($this->boardId, $this->exclude, $limit);
     }
 
     public function membersOf(string $name): array
