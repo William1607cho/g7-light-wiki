@@ -30,9 +30,9 @@ final class DocFooterBuilder
      *     backlinks?: array{items: list<array{post_id: int, title: string}>, more: int}|null,
      *     categories?: list<string>,
      * }  $parts
-     * @param  array<string, string>  $labels  언어 파일 문구
+     * @param  WikiLabels  $labels  화면 문구 (전에는 문구 배열이었다)
      */
-    public static function build(string $slug, array $parts, array $labels): string
+    public static function build(string $slug, array $parts, WikiLabels $labels): string
     {
         $blocks = [];
 
@@ -41,18 +41,18 @@ final class DocFooterBuilder
         if (is_array($members)) {
             $blocks[] = WikiHtml::docSection(
                 $slug,
-                $labels['category_members'] ?? '',
+                $labels->categoryMembers(),
                 $members['items'],
                 $members['more'],
                 'g7lw-category-members',
-                self::moreLabel($labels, $members['more']),
+                $labels->more($members['more']),
             );
         }
 
         $aliases = $parts['aliases'] ?? [];
 
         if ($aliases !== []) {
-            $blocks[] = WikiHtml::aliasLine($labels['aliases'] ?? '', $aliases);
+            $blocks[] = WikiHtml::aliasLine($labels->aliases(), $aliases);
         }
 
         $backlinks = $parts['backlinks'] ?? null;
@@ -60,34 +60,20 @@ final class DocFooterBuilder
         if (is_array($backlinks)) {
             $blocks[] = WikiHtml::docSection(
                 $slug,
-                $labels['backlinks'] ?? '',
+                $labels->backlinks(),
                 $backlinks['items'],
                 $backlinks['more'],
                 'g7lw-backlinks',
-                self::moreLabel($labels, $backlinks['more']),
+                $labels->more($backlinks['more']),
             );
         }
 
         $categories = $parts['categories'] ?? [];
 
         if ($categories !== []) {
-            $blocks[] = WikiHtml::categoryLine($labels['categories'] ?? '', $categories);
+            $blocks[] = WikiHtml::categoryLine($labels->categories(), $categories);
         }
 
         return WikiHtml::footer($blocks);
-    }
-
-    /**
-     * "외 N건" 문구 — 자른 것이 없으면 빈 문자열.
-     *
-     * @param  array<string, string>  $labels
-     */
-    private static function moreLabel(array $labels, int $more): string
-    {
-        if ($more < 1) {
-            return '';
-        }
-
-        return str_replace(':count', (string) $more, $labels['more'] ?? '');
     }
 }

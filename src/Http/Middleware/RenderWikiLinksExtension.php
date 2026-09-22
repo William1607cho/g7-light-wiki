@@ -8,15 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Plugins\G7\Light\Wiki\Support\BoardLookup;
 use Plugins\G7\Light\Wiki\Support\DocFooterBuilder;
+use Plugins\G7\Light\Wiki\Support\DocLists;
 use Plugins\G7\Light\Wiki\Support\EventKey;
-use Plugins\G7\Light\Wiki\Support\FrontPlaceholderRenderer;
 use Plugins\G7\Light\Wiki\Support\HtmlLinkRewriter;
+use Plugins\G7\Light\Wiki\Support\Placeholders\PlaceholderRenderer;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 use Plugins\G7\Light\Wiki\Support\WikiCategory;
 use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
 use Plugins\G7\Light\Wiki\Support\WikiGate;
 use Plugins\G7\Light\Wiki\Support\WikiHtml;
+use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
 use Plugins\G7\Light\Wiki\Support\WikiRefQuery;
 use Plugins\G7\Light\Wiki\Support\WikiUrl;
@@ -117,9 +119,10 @@ class RenderWikiLinksExtension
         $tokens = $rewriter->tokens();
 
         $canRead = WikiGate::canRead($slug, $request->user());
+        $labels = WikiLabels::fromLang();
 
         // 본문 치환과 자동 영역이 쓸 것을 한 자리에서 모아 온다.
-        $context = $this->context($request, $slug, $boardId, $postId, $titleNorm, $tokens, $canRead);
+        $context = $this->context($request, $slug, $boardId, $postId, $titleNorm, $tokens, $canRead, $labels);
 
         $rewritten = $rewriter->hasMarkup()
             ? $rewriter->rewrite($this->resolver($slug, $boardId, $context, $request), pruneEmptyBlocks: true)
@@ -128,7 +131,7 @@ class RenderWikiLinksExtension
         // 자동 영역은 요청자가 이 게시판을 읽을 수 있을 때만 붙인다 — 목록에 남의 문서 제목이
         // 실리기 때문이다. 자기 본문은 코어가 이미 판정해 여기까지 왔다.
         $footer = $canRead
-            ? DocFooterBuilder::build($slug, $context['footer'], self::docLabels())
+            ? DocFooterBuilder::build($slug, $context['footer'], $labels)
             : '';
 
         $final = $rewritten.$footer;
@@ -154,7 +157,7 @@ class RenderWikiLinksExtension
      *     alias: array<string, array{post_id: int, title: string}>,
      *     members: array<string, array{items: list<array{post_id: int, title: string}>, more: int}>,
      *     canWrite: bool,
-     *     renderer: ?FrontPlaceholderRenderer,
+     *     renderer: ?PlaceholderRenderer,
      *     footer: array<string, mixed>,
      * }
      */
@@ -165,7 +168,8 @@ class RenderWikiLinksExtension
         int $postId,
         string $titleNorm,
         array $tokens,
-        bool $canRead
+        bool $canRead,
+        WikiLabels $labels
     ): array {
         $ownCategories = self::targetsOf($tokens, WikiMarkupParser::KIND_CATEGORY);
         $ownAliases = self::targetsOf($tokens, WikiMarkupParser::KIND_ALIAS);
@@ -256,7 +260,7 @@ class RenderWikiLinksExtension
             'alias' => $alias,
             'members' => $members,
             'canWrite' => $canWrite,
-            'renderer' => $this->placeholderRenderer($request, $slug, $boardId, $postId, $tokens, $canRead, $members),
+            'renderer' => self::placeholderRenderer($slug, $boardId, $postId, $tokens, $canRead, $members, $labels),
             'footer' => $footer,
         ];
     }
@@ -391,79 +395,41 @@ class RenderWikiLinksExtension
     }
 
     /**
-     * 자리표시 렌더러 — 자리표시가 실제로 있을 때만 만든다.
+     * 자리표시 디스패처 — 자리표시가 실제로 있을 때만 만든다.
      *
-     * 목록 조회는 그 자리표시가 실제로 치환될 때만 일어난다(공급자가 클로저라서).
+     * 목록 조회는 그 자리표시가 실제로 치환될 때만 일어난다(공급자가 부를 때 조회한다).
      *
-     * 랜덤 대상도 **여기서** 고른다. 플러그인 주소로 보내 서버가 302 로 고르게 하면 브라우저
-     * 전체 이동에 토큰이 실리지 않아 로그인한 사람도 비회원으로 보인다. 이 응답은 토큰이
-     * 실린 요청의 결과라 요청자 기준으로 고를 수 있다.
+     * 랜덤 대상도 **치환 시점에** 고른다. 플러그인 주소로 보내 서버가 302 로 고르게 하면
+     * 브라우저 전체 이동에 토큰이 실리지 않아 로그인한 사람도 비회원으로 보인다. 이 응답은
+     * 토큰이 실린 요청의 결과라 요청자 기준으로 고를 수 있다.
      *
      * @param  list<array<string, mixed>>  $tokens
      * @param  array<string, array{items: list<array{post_id: int, title: string}>, more: int}>  $members
      */
-    private function placeholderRenderer(
-        Request $request,
+    private static function placeholderRenderer(
         string $slug,
         int $boardId,
         int $postId,
         array $tokens,
         bool $canRead,
-        array $members
-    ): ?FrontPlaceholderRenderer {
-        $hasPlaceholder = false;
-
+        array $members,
+        WikiLabels $labels
+    ): ?PlaceholderRenderer {
         foreach ($tokens as $token) {
             if (($token['kind'] ?? '') === WikiMarkupParser::KIND_PLACEHOLDER) {
-                $hasPlaceholder = true;
+                // 후보에서는 대문 글과 지금 그리는 문서 자신을 뺀다.
+                $exclude = [(int) (WikiBoardSettings::frontPostId($boardId) ?? 0), $postId];
 
-                break;
+                return PlaceholderRenderer::forDoc(
+                    $slug,
+                    $canRead,
+                    new DocLists($boardId, $exclude, $members),
+                    $labels,
+                );
             }
         }
 
-        if (! $hasPlaceholder) {
-            return null;
-        }
-
-        // 후보에서는 대문 글과 지금 그리는 문서 자신을 뺀다.
-        $exclude = [(int) (WikiBoardSettings::frontPostId($boardId) ?? 0), $postId];
-
-        // 같은 자리표시를 한 문서에 두 번 쓰면 조회도 두 번 돈다. 결과가 정해져 있는 것
-        // (최근수정·최근작성·색인)은 개수별로 한 번만 조회한다. 색인은 최대 2000행이라
-        // 두 번 도는 비용이 특히 크다.
-        //
-        // 랜덤은 **일부러 캐시하지 않는다** — 한 문서에 랜덤을 두 번 쓰면 서로 다른 문서가
-        // 나오는 편이 자연스럽다.
-        $recentMemo = [];
-        $createdMemo = [];
-        $indexMemo = null;
-        $eventsMemo = [];
-
-        return new FrontPlaceholderRenderer(
-            $slug,
-            $canRead,
-            function (int $limit) use ($boardId, $exclude, &$recentMemo): array {
-                return $recentMemo[$limit] ??= WikiDocQuery::recent($boardId, $exclude, $limit);
-            },
-            function (int $limit) use ($boardId, $exclude, &$createdMemo): array {
-                return $createdMemo[$limit] ??= WikiDocQuery::recentCreated($boardId, $exclude, $limit);
-            },
-            function () use ($boardId, $exclude, &$indexMemo): array {
-                return $indexMemo ??= WikiDocQuery::forIndex($boardId, $exclude);
-            },
-            static fn (): ?int => WikiDocQuery::randomPostId($boardId, $exclude),
-            static fn (int $limit): array => WikiDocQuery::randomDocs($boardId, $exclude, $limit),
-            self::labels(),
-            // 분류 소속 — 이미 한 번에 받아 둔 것에서 꺼낸다(추가 조회 없음).
-            static function (string $name) use ($members): array {
-                return $members[TitleNormalizer::normalize($name)] ?? ['items' => [], 'more' => 0];
-            },
-            // 연표 — 인자가 있으면 그 문서와 그 문서를 링크한 문서들의 사건.
-            static function (?string $docName) use ($boardId, &$eventsMemo): array {
-                return $eventsMemo[$docName ?? ''] ??= WikiRefQuery::timelineFor($boardId, $docName);
-            },
-            self::docLabels(),
-        );
+        return null;
     }
 
     /**
@@ -516,36 +482,4 @@ class RenderWikiLinksExtension
         return $out;
     }
 
-    /**
-     * 자리표시가 쓰는 언어 파일 문구.
-     *
-     * @return array{random: string, other: string, empty: string, tour_created: string, tour_random: string}
-     */
-    private static function labels(): array
-    {
-        return [
-            'random' => (string) __('g7-light-wiki::messages.front.random'),
-            'other' => (string) __('g7-light-wiki::messages.front.other'),
-            'empty' => (string) __('g7-light-wiki::messages.front.empty'),
-            'tour_created' => (string) __('g7-light-wiki::messages.front.tour_created'),
-            'tour_random' => (string) __('g7-light-wiki::messages.front.tour_random'),
-        ];
-    }
-
-    /**
-     * 자동 영역·연표가 쓰는 언어 파일 문구.
-     *
-     * @return array<string, string>
-     */
-    private static function docLabels(): array
-    {
-        $keys = ['categories', 'category_members', 'aliases', 'backlinks', 'timeline', 'more', 'empty', 'timeline_empty'];
-        $out = [];
-
-        foreach ($keys as $key) {
-            $out[$key] = (string) __('g7-light-wiki::messages.doc.'.$key);
-        }
-
-        return $out;
-    }
 }

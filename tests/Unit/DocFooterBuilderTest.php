@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use Plugins\G7\Light\Wiki\Support\DocFooterBuilder;
+use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -10,17 +11,20 @@ use PHPUnit\Framework\TestCase;
  */
 class DocFooterBuilderTest extends TestCase
 {
-    /** @return array<string, string> */
-    private function labels(): array
+    /**
+     * 문구는 `WikiLabels` 로 넘어온다 — 전에는 배열 두 개였다.
+     * 언어 파일을 읽지 않으므로 이 시험은 여전히 Laravel 없이 돈다.
+     */
+    private function labels(): WikiLabels
     {
-        return [
-            'categories' => '분류',
-            'category_members' => '이 분류에 속한 문서',
-            'aliases' => '다른 이름',
-            'backlinks' => '이 문서를 가리키는 문서',
-            'more' => '외 :count건',
-            'empty' => '아직 문서가 없습니다.',
-        ];
+        return WikiLabels::of([
+            'doc.categories' => '분류',
+            'doc.category_members' => '이 분류에 속한 문서',
+            'doc.aliases' => '다른 이름',
+            'doc.backlinks' => '이 문서를 가리키는 문서',
+            'doc.more' => '외 :count건',
+            'doc.empty' => '아직 문서가 없습니다.',
+        ]);
     }
 
     public function test_붙일_것이_없으면_빈_문자열이다(): void

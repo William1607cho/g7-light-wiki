@@ -85,6 +85,16 @@ final class WikiHtml
     }
 
     /**
+     * 보여 줄 것이 없을 때의 안내 한 줄.
+     *
+     * 목록 자리에 아무것도 그리지 않으면 사람이 적은 자리표시가 사라진 것처럼 보인다.
+     */
+    public static function emptyNotice(string $class, string $label): string
+    {
+        return '<p class="'.$class.' g7lw-empty">'.self::e($label).'</p>';
+    }
+
+    /**
      * 최근 수정 목록.
      *
      * @param  list<array{post_id: int, title: string}>  $items
