@@ -181,6 +181,11 @@ class FrontPlaceholderRendererTest extends TestCase
         $html = $this->renderer()->render($this->token(WikiMarkupParser::PLACEHOLDER_INDEX));
 
         $this->assertStringContainsString('class="g7lw-index"', $html);
+        // 묶음 머리글도 둘러보기와 같은 강조를 인라인 style 로 받는다.
+        $this->assertStringContainsString(
+            '<h3 class="g7lw-index-label" style="font-weight:700;font-size:1.125rem;margin:1rem 0 .25rem">',
+            $html
+        );
         $this->assertStringContainsString('>ㄱ<', $html);
         $this->assertStringContainsString('>A<', $html);
         $this->assertStringContainsString('href="/board/test-wiki/11"', $html);
@@ -194,8 +199,11 @@ class FrontPlaceholderRendererTest extends TestCase
         $this->assertStringContainsString('style="display:flex;flex-wrap:wrap;gap:1.5rem"', $html);
         // 각 단은 좁은 화면에서 접힌다.
         $this->assertSame(2, substr_count($html, 'style="flex:1 1 16rem;min-width:0"'));
-        // 머리글 2개.
-        $this->assertSame(2, substr_count($html, '<h3 class="g7lw-tour-label">'));
+        // 머리글 2개. 강조도 인라인 style 로만 준다(색은 상속 — 다크 모드).
+        $this->assertSame(2, substr_count(
+            $html,
+            '<h3 class="g7lw-tour-label" style="font-weight:700;font-size:1.125rem;margin:1rem 0 .25rem">'
+        ));
         $this->assertStringContainsString('최근 작성 문서', $html);
         // 왼쪽은 최근 작성, 오른쪽은 랜덤.
         $this->assertTrue(strpos($html, 'g7lw-created') < strpos($html, 'g7lw-random-list'));

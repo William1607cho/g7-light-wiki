@@ -21,6 +21,17 @@ final class WikiHtml
     public const CLASS_NEW = 'g7lw-link-new text-red-600 dark:text-red-400';
 
     /**
+     * 자리표시 머리글(색인 묶음·둘러보기 단)의 강조.
+     *
+     * 템플릿 빌드 CSS 에 `g7lw-…` 전용 스타일이 없어 class 만으로는 본문 글자와 크기가
+     * 같아 보인다(2026-09-21 실브라우저 관찰). 그래서 배치와 마찬가지로 **인라인 style
+     * 로만** 준다. `style` 속성은 봇 SSR 정제기와 방문자 화면 DOMPurify 양쪽이 남긴다.
+     *
+     * 색은 **지정하지 않는다** — 상속을 받아야 다크 모드에서 깨지지 않는다.
+     */
+    private const LABEL_STYLE = 'font-weight:700;font-size:1.125rem;margin:1rem 0 .25rem';
+
+    /**
      * 있는 문서로 가는 링크.
      */
     public static function link(string $url, string $label): string
@@ -144,7 +155,7 @@ final class WikiHtml
     private static function tourColumn(string $label, string $body): string
     {
         return '<div class="g7lw-tour-col" style="flex:1 1 16rem;min-width:0">'
-            .'<h3 class="g7lw-tour-label">'.self::e($label).'</h3>'
+            .'<h3 class="g7lw-tour-label" style="'.self::LABEL_STYLE.'">'.self::e($label).'</h3>'
             .$body
             .'</div>';
     }
@@ -185,7 +196,8 @@ final class WikiHtml
         foreach ($groups as $group) {
             $label = $group['label'] === WikiIndexBuilder::OTHER ? $otherLabel : $group['label'];
 
-            $html .= '<div class="g7lw-index-group"><h3 class="g7lw-index-label">'.self::e($label).'</h3><ul>';
+            $html .= '<div class="g7lw-index-group"><h3 class="g7lw-index-label" style="'.self::LABEL_STYLE.'">'
+                .self::e($label).'</h3><ul>';
 
             foreach ($group['items'] as $item) {
                 $html .= '<li>'.self::link(WikiUrl::post($slug, (int) $item['id']), (string) $item['title']).'</li>';

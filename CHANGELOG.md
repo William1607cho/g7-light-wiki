@@ -49,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Placeholders are no longer front-page-only: they are filled in on **any HTML-mode document**
   of a wiki board. Candidates exclude the front page post and the document being rendered.
+- Index group headings and the two tour column headings are emphasised with an inline
+  `style` (`font-weight:700;font-size:1.125rem;margin:1rem 0 .25rem`) instead of relying on
+  template CSS, which carries no rule for the `g7lw-…` classes. No colour is set, so the
+  headings inherit it and stay readable in dark mode.
 
 ### Known limits
 
