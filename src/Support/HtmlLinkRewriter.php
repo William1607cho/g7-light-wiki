@@ -82,6 +82,29 @@ final class HtmlLinkRewriter
     }
 
     /**
+     * 본문의 모든 표기 토큰 — **문서 순서**.
+     *
+     * 저장 시점 추출(`light_wiki_refs`)이 쓴다. 표시 시점 치환과 **같은 파서·같은 순회**를
+     * 거치므로, 추출된 것과 화면에 나오는 것이 어긋나지 않는다. `seq` 는 이 순서다.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function tokens(): array
+    {
+        $this->load();
+
+        $all = [];
+
+        foreach ($this->matches as $match) {
+            foreach ($match['tokens'] as $token) {
+                $all[] = $token;
+            }
+        }
+
+        return $all;
+    }
+
+    /**
      * 자리표시(`[[#…]]`) 표기가 하나라도 있는가.
      *
      * 호출부는 이것이 거짓이면 자리표시 렌더러를 **아예 만들지 않는다** — 렌더러를 만들면
@@ -107,9 +130,13 @@ final class HtmlLinkRewriter
      *
      * @param  callable(array<string, mixed>): ?string  $resolver  토큰 → 대체 HTML.
      *                                       `null` 을 돌려주면 그 표기는 **원문 그대로** 남는다.
+     *                                       빈 문자열을 돌려주면 그 표기는 **지워진다**.
+     * @param  bool  $pruneEmptyBlocks  표기를 지워서 빈 껍데기만 남은 블록을 함께 없앨지.
+     *                                  `[[분류:…]]`·`[[별칭:…]]` 처럼 본문에서 지우는 표기가
+     *                                  제 문단을 통째로 차지하고 있던 경우를 위한 것이다.
      * @return string 가공된 HTML (바꿀 것이 없으면 입력과 바이트가 같다)
      */
-    public function rewrite(callable $resolver): string
+    public function rewrite(callable $resolver, bool $pruneEmptyBlocks = false): string
     {
         $this->load();
 
@@ -118,6 +145,7 @@ final class HtmlLinkRewriter
         }
 
         $changed = false;
+        $touched = [];
 
         foreach ($this->matches as $match) {
             $parts = $this->buildParts($match['node']->nodeValue ?? '', $match['tokens'], $resolver, $replaced);
@@ -126,15 +154,81 @@ final class HtmlLinkRewriter
                 continue;
             }
 
+            $parent = $match['node']->parentNode;
+
             $this->replaceNode($match['node'], $parts);
             $changed = true;
+
+            if ($parent instanceof \DOMElement) {
+                $touched[] = $parent;
+            }
         }
 
         if (! $changed) {
             return $this->html;
         }
 
+        if ($pruneEmptyBlocks) {
+            $this->pruneEmpty($touched);
+        }
+
         return $this->serialize();
+    }
+
+    /**
+     * 표기를 지워서 빈 껍데기만 남은 블록을 없앤다.
+     *
+     * **손댄 노드의 조상만** 훑는다. 본문 전체를 훑어 빈 문단을 지우면 사용자가 일부러 넣은
+     * 빈 줄까지 없어진다.
+     *
+     * @param  list<\DOMElement>  $touched  치환이 일어난 텍스트 노드의 부모들
+     */
+    private function pruneEmpty(array $touched): void
+    {
+        foreach ($touched as $element) {
+            $current = $element;
+
+            while ($current instanceof \DOMElement && $current !== $this->root) {
+                if (! self::isBlank($current)) {
+                    break;
+                }
+
+                $parent = $current->parentNode;
+                $current->parentNode?->removeChild($current);
+                $current = $parent instanceof \DOMElement ? $parent : null;
+            }
+        }
+    }
+
+    /**
+     * 요소에 "보이는 내용" 이 없는가.
+     *
+     * 공백(NBSP 포함)뿐인 텍스트, `<br>`, 주석은 내용으로 치지 않는다. 그 밖의 요소가
+     * 하나라도 있으면 내용이 있는 것이다.
+     */
+    private static function isBlank(\DOMElement $element): bool
+    {
+        foreach (iterator_to_array($element->childNodes) as $child) {
+            if ($child instanceof \DOMComment) {
+                continue;
+            }
+
+            if ($child instanceof \DOMText) {
+                if (preg_replace('/[\s\x{00A0}]+/u', '', $child->nodeValue ?? '') !== '') {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if ($child instanceof \DOMElement && strtolower($child->tagName) === 'br') {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

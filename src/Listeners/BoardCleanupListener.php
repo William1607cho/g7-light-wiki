@@ -5,6 +5,7 @@ namespace Plugins\G7\Light\Wiki\Listeners;
 use App\Contracts\Extension\HookListenerInterface;
 use Illuminate\Support\Facades\Log;
 use Plugins\G7\Light\Wiki\Support\DocIndexer;
+use Plugins\G7\Light\Wiki\Support\RefIndexer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 
 /**
@@ -52,10 +53,12 @@ class BoardCleanupListener implements HookListenerInterface
         }
 
         $removed = DocIndexer::forgetBoard($boardId);
+        $removedRefs = RefIndexer::forgetBoard($boardId);
 
         Log::warning('[g7-light-wiki] 위키 게시판이 삭제되어 문서 색인을 지웠습니다. 플러그인 설정의 해당 항목은 그대로 두었으니 관리자 화면에서 정리하세요', [
             'board_id' => $boardId,
             'removed_rows' => $removed,
+            'removed_ref_rows' => $removedRefs,
         ]);
     }
 

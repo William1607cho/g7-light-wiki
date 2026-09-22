@@ -181,6 +181,7 @@ class Plugin extends AbstractPlugin
     {
         return [
             'light_wiki_docs',
+            'light_wiki_refs',
         ];
     }
 

@@ -14,7 +14,16 @@ namespace Plugins\G7\Light\Wiki\Support;
  * |---|---|---|
  * | `[[문서명]]`, `[[문서명\|표시 글자]]` | `link` | 문서 링크로 바꾼다 |
  * | `[[#최근수정]]`, `[[#최근작성]]`, `[[#랜덤]]`, `[[#색인]]`, `[[#둘러보기]]` (각각 `\|N` 가능) | `placeholder` | 위키 게시판의 HTML 모드 문서에서 치환한다 |
- * | `[[분류:…]]`, `[[연표:…]]` | `reserved` | 원문 그대로 둔다 (다음 단계 예약) |
+ * | `[[#분류\|이름]]`, `[[#연표]]`, `[[#연표\|문서명]]` | `placeholder` | 2단계 — 분류 소속 목록·연표 목록 |
+ * | `[[분류:이름]]` | `category` | 본문에서 지우고 문서 아래 분류 줄로 모은다 |
+ * | `[[별칭:이름]]` | `alias` | 본문에서 지우고 문서 아래 "다른 이름" 줄로 모은다 |
+ * | `[[연표:키\|설명]]` | `event` | 그 자리에 설명 글자만 남기고 사건으로 등록한다 |
+ *
+ * ## 접두어 표기의 `target`
+ *
+ * `target` 에는 **접두어를 뗀 이름**이 들어간다(`[[분류:인물]]` → `인물`). 접두어는 `kind`
+ * 가 이미 말해 주므로 값에 두 번 담지 않는다. 뗀 뒤 남은 이름이 비면 표기가 아니다
+ * (`[[분류:]]` 는 원문 그대로 남는다).
  *
  * 1.5단계부터 자리표시는 **대문 글 전용이 아니다** — 같은 위키 게시판의 모든 HTML 모드
  * 문서에서 치환된다. 이 클래스는 어차피 "어느 글인지" 를 모르고 문자열만 본다.
@@ -30,8 +39,14 @@ final class WikiMarkupParser
     /** 대문 자리표시 */
     public const KIND_PLACEHOLDER = 'placeholder';
 
-    /** 예약 표기 — 1단계에서는 원문 유지 */
-    public const KIND_RESERVED = 'reserved';
+    /** 분류 `[[분류:이름]]` */
+    public const KIND_CATEGORY = 'category';
+
+    /** 별칭 `[[별칭:이름]]` */
+    public const KIND_ALIAS = 'alias';
+
+    /** 사건 `[[연표:키|설명]]` */
+    public const KIND_EVENT = 'event';
 
     /** 자리표시 이름 (`#` 뒤) */
     public const PLACEHOLDER_RECENT = '최근수정';
@@ -44,8 +59,18 @@ final class WikiMarkupParser
 
     public const PLACEHOLDER_TOUR = '둘러보기';
 
-    /** 예약 접두어 */
-    private const RESERVED_PREFIXES = ['분류:', '연표:'];
+    /** 분류 소속 목록 `[[#분류|이름]]` */
+    public const PLACEHOLDER_CATEGORY = '분류';
+
+    /** 연표 목록 `[[#연표]]`·`[[#연표|문서명]]` */
+    public const PLACEHOLDER_TIMELINE = '연표';
+
+    /** 접두어 표기 — `접두어` => `kind` */
+    private const PREFIX_KINDS = [
+        '분류:' => self::KIND_CATEGORY,
+        '별칭:' => self::KIND_ALIAS,
+        '연표:' => self::KIND_EVENT,
+    ];
 
     /** 알려진 자리표시 이름 */
     private const PLACEHOLDERS = [
@@ -54,6 +79,8 @@ final class WikiMarkupParser
         self::PLACEHOLDER_RANDOM,
         self::PLACEHOLDER_INDEX,
         self::PLACEHOLDER_TOUR,
+        self::PLACEHOLDER_CATEGORY,
+        self::PLACEHOLDER_TIMELINE,
     ];
 
     /**
@@ -131,10 +158,21 @@ final class WikiMarkupParser
             return self::token(self::KIND_PLACEHOLDER, $raw, $offset, $length, '', null, $name, $tail === null ? null : trim($tail));
         }
 
-        foreach (self::RESERVED_PREFIXES as $prefix) {
-            if (str_starts_with($head, $prefix)) {
-                return self::token(self::KIND_RESERVED, $raw, $offset, $length, $head, $tail === null ? null : trim($tail), '', null);
+        foreach (self::PREFIX_KINDS as $prefix => $kind) {
+            if (! str_starts_with($head, $prefix)) {
+                continue;
             }
+
+            // 접두어를 뗀 이름이 target 이다. 비어 있으면 표기가 아니다 — 원문 그대로 남는다.
+            $name = trim(substr($head, strlen($prefix)));
+
+            if ($name === '') {
+                return null;
+            }
+
+            $label = $tail === null ? null : trim($tail);
+
+            return self::token($kind, $raw, $offset, $length, $name, $label === '' ? null : $label, '', null);
         }
 
         $label = $tail === null ? null : trim($tail);

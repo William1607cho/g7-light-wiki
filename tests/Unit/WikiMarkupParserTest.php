@@ -26,13 +26,15 @@ class WikiMarkupParserTest extends TestCase
         $this->assertSame('설치하기', $tokens[0]['label']);
     }
 
-    public function test_예약_표기는_reserved_로_온다(): void
+    public function test_접두어_표기는_종류별로_갈린다(): void
     {
         $tokens = WikiMarkupParser::tokenize('[[분류:인물]] [[연표:1.0|x]]');
 
         $this->assertCount(2, $tokens);
-        $this->assertSame(WikiMarkupParser::KIND_RESERVED, $tokens[0]['kind']);
-        $this->assertSame(WikiMarkupParser::KIND_RESERVED, $tokens[1]['kind']);
+        $this->assertSame(WikiMarkupParser::KIND_CATEGORY, $tokens[0]['kind']);
+        $this->assertSame('인물', $tokens[0]['target'], '접두어를 뗀 이름이 target 이다');
+        $this->assertSame(WikiMarkupParser::KIND_EVENT, $tokens[1]['kind']);
+        $this->assertSame('1.0', $tokens[1]['target']);
     }
 
     public function test_자리표시를_이름과_인자로_가른다(): void
