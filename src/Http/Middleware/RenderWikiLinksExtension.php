@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Plugins\G7\Light\Wiki\Support\BoardLookup;
 use Plugins\G7\Light\Wiki\Support\DocFooterBuilder;
+use Plugins\G7\Light\Wiki\Support\EventKey;
 use Plugins\G7\Light\Wiki\Support\FrontPlaceholderRenderer;
 use Plugins\G7\Light\Wiki\Support\HtmlLinkRewriter;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
@@ -380,7 +381,7 @@ class RenderWikiLinksExtension
     {
         $key = (string) ($token['target'] ?? '');
 
-        if (! \Plugins\G7\Light\Wiki\Support\EventKey::isValid($key)) {
+        if (! EventKey::isValid($key)) {
             return null;
         }
 

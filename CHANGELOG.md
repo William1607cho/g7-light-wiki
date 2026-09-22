@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Category markup `[[분류:이름]]`. The token is removed from the body (an emptied paragraph
+  goes with it) and the document grows a category line at the bottom. A category is not a
+  separate entity but a document titled `분류:이름` — so sub-categories come for free, and the
+  permission and secret-post rules need no special casing. A missing category renders with the
+  existing red-link rule.
+- A document titled `분류:…` automatically lists the documents in that category.
+  `[[#분류|이름]]` renders the same list anywhere in the board.
+- Alias markup `[[별칭:이름]]`. The token is removed from the body and listed as
+  "다른 이름" under the document. Links resolve by real title first, alias second; an alias that
+  collides with another document's real title loses and is logged.
+- Backlinks — every document lists the documents pointing at it (by title or by alias),
+  ordered by normalized title, capped at 100. The heading is omitted entirely at zero.
+- Timeline markup `[[연표:키|설명]]`. The key orders events and is not shown; only the
+  description stays in the body. `[[#연표]]` lists every event in the board by key, and
+  `[[#연표|문서명]]` lists that document's events together with those of documents linking to it.
+  Keys are `-?정수(.정수)*`, compared field by field, with the shorter key first; a malformed key
+  is left in the body verbatim and registers no event.
+- Extraction table `light_wiki_refs`, filled from the body on save, restore and delete, and
+  rebuilt by `light-wiki:rebuild`. Secret and blinded documents keep their rows but are excluded
+  from every list shown to others.
+- Bot cache invalidation now also covers the link targets, the category documents and — when an
+  alias changes — the documents linking through that alias, capped at 100 per save.
+
+### Changed
+
+- Placeholder headings size with the body text (`1.25em`) instead of a fixed `1.125rem`, so a
+  site that enlarges its body text keeps the heading proportional.
+
+### Added (1.5단계까지)
+
 - Placeholders `[[#최근작성]]` / `[[#최근작성|N]]` (documents ordered by the core post
   `created_at`, default 5, max 50) and `[[#둘러보기]]` / `[[#둘러보기|N]]` (a two-column block:
   recently created on the left, random on the right, default 5 each; laid out with inline
