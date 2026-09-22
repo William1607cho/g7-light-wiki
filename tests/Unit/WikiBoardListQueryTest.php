@@ -57,10 +57,28 @@ class WikiBoardListQueryTest extends TestCase
         $this->assertIsInt(WikiDocListQuery::INDEX_LIMIT);
     }
 
-    public function test_무작위_개수는_20이다(): void
+    public function test_무작위_개수_상한은_20이다(): void
     {
-        $this->assertSame(20, WikiBoardListQuery::RANDOM_COUNT);
-        $this->assertLessThanOrEqual(WikiBoardListQuery::LIST_LIMIT, WikiBoardListQuery::RANDOM_COUNT);
+        $this->assertSame(20, WikiBoardListQuery::RANDOM_COUNT_MAX);
+        $this->assertLessThanOrEqual(WikiBoardListQuery::LIST_LIMIT, WikiBoardListQuery::RANDOM_COUNT_MAX);
+    }
+
+    public function test_무작위_개수는_한_쪽_개수와_상한_중_작은_것이다(): void
+    {
+        // 1쪽 고정이라 한 쪽에 안 들어가는 문서는 볼 수 없다. 그런데도 뽑으면 총 건수가
+        // 한 쪽 개수보다 커져 뜻 없는 2쪽 페이저가 생긴다(모바일 15건 / 20건 실측).
+        // 한 쪽 20건(데스크톱) / 15건(휴대폰) / 50건(상한에 걸림) / 1건.
+        $this->assertSame(20, WikiBoardListQuery::randomCount(20));
+        $this->assertSame(15, WikiBoardListQuery::randomCount(15));
+        $this->assertSame(20, WikiBoardListQuery::randomCount(50));
+        $this->assertSame(1, WikiBoardListQuery::randomCount(1));
+    }
+
+    public function test_한_쪽_개수가_쓸모없으면_상한을_쓴다(): void
+    {
+        // 호출부가 이미 1 이상을 확인하지만, 이 계산만 따로 시험할 수 있게 여기서도 막는다.
+        $this->assertSame(20, WikiBoardListQuery::randomCount(0));
+        $this->assertSame(20, WikiBoardListQuery::randomCount(-5));
     }
 
     public function test_공지_예외는_대문_글_하나뿐이다(): void

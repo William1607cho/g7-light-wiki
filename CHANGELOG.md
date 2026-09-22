@@ -43,8 +43,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request inside the cooldown is answered with the previous draw rather than an error, so
   hammering "draw again" never replaces the listing with an error screen. The reused ids are
   re-checked for visibility on every request.
+- Wiki boards now advertise themselves in their API responses through a single `board.wiki`
+  field. Its presence means "this board is a wiki"; there is no separate `is_wiki` flag. The
+  listing carries `{"list_mode": "none"|"recent"|"random"}` — the mode actually applied, not the
+  one asked for in `sort_by`, because a search keyword overrides the mode. The post detail
+  carries `{"front_post_id": <id>|null}`. The post form metadata carries an empty object. A
+  board that is not a wiki gets no field at all. A template can read none of the plugin's
+  settings, so shipping the value in the response is the only way for a screen to branch on it.
+- A new middleware puts that field on the post form **metadata** response
+  (`boards.posts.form-meta`). It is deliberately not on `form-data`: the template loads that
+  response wholesale into its form state and posts it back when saving, so an extra field there
+  would travel into the post-save request body.
 
 ### Changed
+
+- Wiki post detail responses are now rewritten even when the body is left untouched, so that
+  `board.wiki` is present on every document of a wiki board. Previously the response object was
+  returned as-is whenever the rewrite produced no change — which would have made the field
+  appear on some documents and not others, and the screen would differ document by document.
+  Nothing else about the response changes, and boards that are not wikis are still not touched
+  at all.
+- The random listing now draws `min(20, page size)` documents instead of a fixed 20. The mode is
+  pinned to a single page, so anything beyond one page could not be reached anyway, while the
+  surplus produced a page-2 pager that led nowhere (a phone showing 15 of 20). The page size
+  comes from the same source the recent listing uses — the core response's pagination, which
+  already accounts for the board setting and the mobile split.
+- The random cooldown cache key now includes the number drawn, so a desktop draw (20) and a
+  phone draw (15) no longer reuse each other's previous result inside the 3 second window.
 
 - The board listing, its title search and both new modes now apply the same conditions the core
   user listing applies: replies (`parent_id`) and notices (`is_notice`) are excluded, deleted

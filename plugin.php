@@ -8,6 +8,7 @@ use App\Extension\Helpers\ExtensionMenuSyncHelper;
 use Plugins\G7\Light\Wiki\Http\Middleware\PrefillWikiTitleExtension;
 use Plugins\G7\Light\Wiki\Http\Middleware\RenderWikiLinksExtension;
 use Plugins\G7\Light\Wiki\Http\Middleware\WikiBoardListExtension;
+use Plugins\G7\Light\Wiki\Http\Middleware\WikiFormMetaExtension;
 use Plugins\G7\Light\Wiki\Listeners\BoardCleanupListener;
 use Plugins\G7\Light\Wiki\Listeners\PostIndexListener;
 use Plugins\G7\Light\Wiki\Listeners\PostTitleGuardListener;
@@ -135,9 +136,10 @@ class Plugin extends AbstractPlugin
     /**
      * 등록할 미들웨어.
      *
-     * 셋 다 첫 줄에서 "위키 게시판인가" 를 보고 아니면 원본 응답을 그대로 돌려준다.
+     * 넷 다 첫 줄에서 "위키 게시판인가" 를 보고 아니면 원본 응답을 그대로 돌려준다.
      * 코어 게이트(`ExtensionMiddlewareGate`)가 라우트명을 `targets` 와 대조하므로
-     * 다른 API 응답에는 아예 실행되지 않는다 — 관리자 게시물 API·홈 위젯 API 포함.
+     * 다른 API 응답에는 아예 실행되지 않는다 — 관리자 게시물 API·홈 위젯 API,
+     * 그리고 **글 저장(POST·PUT)** 포함.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -167,6 +169,17 @@ class Plugin extends AbstractPlugin
                 'timing' => 'before_core',
                 'targets' => [
                     'api.modules.sirsoft-board.boards.posts.form-data',
+                ],
+            ],
+            [
+                // 작성 화면의 **메타**에만 붙는다. `form-data` 가 아니다 — 그쪽 응답은 템플릿이
+                // 폼 상태로 통째로 받아 저장 요청에 그대로 실어 보내므로, 칸을 더하면 그 칸이
+                // 글 저장 본문에 섞인다.
+                'class' => WikiFormMetaExtension::class,
+                'groups' => ['api'],
+                'timing' => 'after_core',
+                'targets' => [
+                    'api.modules.sirsoft-board.boards.posts.form-meta',
                 ],
             ],
         ];

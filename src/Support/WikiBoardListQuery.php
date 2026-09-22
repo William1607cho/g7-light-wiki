@@ -50,8 +50,33 @@ final class WikiBoardListQuery
      */
     public const LIST_LIMIT = 2000;
 
-    /** 무작위 모드가 한 쪽에 늘어놓는 문서 수 (1쪽 고정이라 이것이 전부다) */
-    public const RANDOM_COUNT = 20;
+    /**
+     * 무작위 모드가 한 번에 뽑는 문서 수의 **상한**.
+     *
+     * 실제 개수는 {@see randomCount()} 가 한 쪽 개수와 견줘 정한다. 자리표시 무작위의
+     * 상한({@see WikiDocListQuery::RANDOM_MAX})과는 **다른 상수다** — 하나는 목록 화면,
+     * 하나는 본문 자리표시이고 서로 사정이 다르다.
+     */
+    public const RANDOM_COUNT_MAX = 20;
+
+    /**
+     * 이 요청에서 무작위로 뽑을 문서 수 — `min(상한, 한 쪽 개수)`.
+     *
+     * 무작위 모드는 **1쪽 고정**이라 한 쪽에 들어가지 않는 문서는 볼 방법이 없다. 그런데도
+     * 상한만큼 뽑으면 총 건수가 한 쪽 개수보다 커져 **뜻 없는 2쪽 페이저**가 생긴다
+     * (모바일 한 쪽 15건에서 20건을 뽑던 2026-09-22 실측). 그래서 한 쪽에 맞춘다.
+     *
+     * 한 쪽 개수가 0 이하로 들어오면 상한을 쓴다 — 호출부가 이미 1 이상을 확인하지만,
+     * 이 계산만 따로 시험할 수 있게 여기서도 막는다.
+     */
+    public static function randomCount(int $perPage): int
+    {
+        if ($perPage < 1) {
+            return self::RANDOM_COUNT_MAX;
+        }
+
+        return min(self::RANDOM_COUNT_MAX, $perPage);
+    }
 
     /**
      * 제목 검색 — 정규화 제목에 정규화 검색어가 **들어 있는** 문서의 글 ID.

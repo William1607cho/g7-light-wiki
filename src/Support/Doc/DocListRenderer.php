@@ -24,8 +24,14 @@ use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
  * |---|---|
  * | 검색어 있음 | 정규화 제목에 정규화 검색어가 **들어 있는** 문서. `title_norm` 오름차순 |
  * | `?sort_by=g7lw-recent` | **최근 수정순** 전체 문서. 페이지 넘김 있음 |
- * | `?sort_by=g7lw-random` | **무작위** 문서 20건. **1쪽 고정** |
+ * | `?sort_by=g7lw-random` | **무작위** 문서 `min(20, 한 쪽 개수)`건. **1쪽 고정** |
  * | 그 밖(모드 없음·허용 밖 값) | **대문 글 1건**만 담은 목록. 대문이 지정돼 있지 않으면 원본 그대로 |
+ *
+ * ## 갈아 끼우지 않아도 `board.wiki` 는 싣는다
+ *
+ * 위키 게시판이면 **어느 경로로 나가든** 게시판 정보에 {@see WikiBoardFlag} 의 칸을 얹는다.
+ * 대문이 지정되지 않아 목록을 그대로 두는 경우도 마찬가지다 — 값이 들쭉날쭉하면 같은
+ * 게시판의 화면이 요청마다 달라진다. 위키가 **아닌** 게시판에는 미들웨어가 여기까지 오지 않는다.
  *
  * **검색어가 모드보다 먼저다.** 화면에 검색창이 있고, 사용자가 방금 친 것이 검색어다.
  * 검색어가 있으면 `sort_by` 는 무시한다(페이지 넘김도 검색 결과 기준으로 돈다).
@@ -51,7 +57,9 @@ use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
  * 페이지 크기와 현재 페이지도 **원본 응답의 `pagination` 에서 읽는다.** 게시판 설정과
  * 모바일 판정이 이미 반영된 값이라, 같은 규칙을 다시 구현하지 않는다. 그래서 최근 수정
  * 목록의 한 쪽 개수도 게시판 설정을 그대로 따른다(PC 와 모바일이 다를 수 있다).
- * 무작위 모드만은 현재 페이지를 **1 로 고정**한다 — 요청마다 순서가 달라 2쪽이 성립하지 않는다.
+ * 무작위 모드만은 현재 페이지를 **1 로 고정**하고 **뽑는 개수도 그 한 쪽에 맞춘다** —
+ * 요청마다 순서가 달라 2쪽이 성립하지 않으므로, 한 쪽에 안 들어가는 문서를 뽑아 봐야
+ * 볼 수 없는 채로 모바일에 뜻 없는 2쪽 페이저만 만든다.
  */
 final class DocListRenderer
 {
@@ -66,23 +74,50 @@ final class DocListRenderer
         $data = $response->getData(true);
         $payload = $data['data'] ?? null;
 
-        if (! is_array($payload)
-            || ! isset($payload['data']) || ! is_array($payload['data'])
-            || ! isset($payload['pagination']) || ! is_array($payload['pagination'])) {
+        if (! is_array($payload)) {
+            // 모양을 모르는 응답은 건드리지 않는다.
             return $response;
+        }
+
+        $mode = $this->mode();
+
+        // 갈아 끼우지 못해도 깃발은 싣는다(위 "갈아 끼우지 않아도" 참조).
+        $payload = $this->rebuild($payload, $mode) ?? $payload;
+
+        $data['data'] = WikiBoardFlag::withWiki($payload, WikiBoardFlag::listValue($mode));
+
+        // setData 는 이 응답이 쥐고 있는 인코딩 옵션 그대로 되쓴다.
+        $response->setData($data);
+
+        return $response;
+    }
+
+    /**
+     * 코어 글 목록을 문서 목록으로 갈아 끼운다.
+     *
+     * `null` 은 "갈아 끼우지 않는다" 는 뜻이다 — 응답 모양이 다르거나, 대문이 지정되지
+     * 않았거나, 검색어가 정규화 후 빈 문자열이 되는 경우다.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>|null
+     */
+    private function rebuild(array $payload, string $mode): ?array
+    {
+        if (! isset($payload['data']) || ! is_array($payload['data'])
+            || ! isset($payload['pagination']) || ! is_array($payload['pagination'])) {
+            return null;
         }
 
         $perPage = (int) ($payload['pagination']['per_page'] ?? 0);
 
         if ($perPage < 1) {
-            return $response;
+            return null;
         }
 
-        $mode = $this->mode();
-        $target = $this->targetIds($mode);
+        $target = $this->targetIds($mode, $perPage);
 
         if ($target === null) {
-            return $response;
+            return null;
         }
 
         $postIds = $target['ids'];
@@ -113,12 +148,7 @@ final class DocListRenderer
         $payload['data'] = $this->withBoardKeys($built['data'], $payload['board'] ?? []);
         $payload['pagination'] = $built['pagination'];
 
-        $data['data'] = $payload;
-
-        // setData 는 이 응답이 쥐고 있는 인코딩 옵션 그대로 되쓴다.
-        $response->setData($data);
-
-        return $response;
+        return $payload;
     }
 
     /**
@@ -138,9 +168,10 @@ final class DocListRenderer
      * `null` 은 "원본 응답을 그대로 두라" 는 뜻이다 — 대문이 지정되지 않았거나,
      * 검색어가 정규화 후 빈 문자열이 되는 경우다(빈 검색어로 전부 훑지 않는다).
      *
+     * @param  int  $perPage  이 요청의 한 쪽 개수 — 무작위 개수의 상한으로 쓰인다
      * @return array{ids: list<int>, truncated: bool}|null
      */
-    private function targetIds(string $mode): ?array
+    private function targetIds(string $mode, int $perPage): ?array
     {
         $search = $this->rawSearch();
 
@@ -150,7 +181,7 @@ final class DocListRenderer
 
         return match ($mode) {
             ListMode::RECENT => $this->recentIds(),
-            ListMode::RANDOM => $this->randomIds(),
+            ListMode::RANDOM => $this->randomIds($perPage),
             default => $this->frontIds(),
         };
     }
@@ -208,17 +239,24 @@ final class DocListRenderer
      * 되쓰는 id 도 노출 판정을 다시 받는다. 3초 사이에 글이 지워지거나 권한이 바뀔 수 있고,
      * 그때 안 보여야 할 문서를 캐시가 되살리면 안 된다.
      *
+     * **뽑는 개수는 한 쪽에 들어가는 만큼이다**({@see WikiBoardListQuery::randomCount()}).
+     * 개수는 쿨다운 캐시 키에도 들어간다 — 한 쪽 개수가 다른 두 화면이 서로의 직전 결과를
+     * 되쓰면 안 된다.
+     *
      * @return array{ids: list<int>, truncated: bool}
      */
-    private function randomIds(): array
+    private function randomIds(int $perPage): array
     {
+        $count = WikiBoardListQuery::randomCount($perPage);
+
         $ids = RandomDrawCache::remember(
             $this->boardId,
             $this->request,
+            $count,
             fn (): array => WikiBoardListQuery::randomPostIds(
                 $this->slug,
                 $this->boardId,
-                WikiBoardListQuery::RANDOM_COUNT
+                $count
             )
         );
 

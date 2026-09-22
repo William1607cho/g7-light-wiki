@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Plugins\G7\Light\Wiki\Support\DocFooterBuilder;
 use Plugins\G7\Light\Wiki\Support\HtmlLinkRewriter;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
+use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 
 /**
@@ -13,10 +14,16 @@ use Plugins\G7\Light\Wiki\Support\WikiLabels;
  *
  * 미들웨어에서 떼어 냈다. 미들웨어는 "위키 게시판인가" 를 보고 이쪽으로 넘기는 일만 한다.
  *
- * ## 바꾸지 않는 경우 — 응답 객체를 건드리지 않는다
+ * ## 위키 게시판이면 본문을 안 바꿔도 응답을 되쓴다 (2026-09-22 변경)
  *
- * 본문이 문자열이 아니거나 `content_mode` 가 `html` 이 아니면 원본 응답을 그대로 돌려준다.
- * 가공 결과가 원본과 같아도 그렇다. 그럴 때 응답 바이트는 설치 전과 같다.
+ * 전에는 "본문이 바뀌지 않으면 응답 객체를 건드리지 않는다" 가 원칙이었다. 지금은
+ * **위키 게시판이면 언제나** 게시판 정보에 {@see WikiBoardFlag} 의 칸을 얹는다 — 화면이
+ * 작성자·이전글/다음글을 숨기고 목록 버튼을 대문으로 보내려면 그 값이 **모든 문서에서**
+ * 있어야 하기 때문이다. 본문이 평문(`content_mode !== 'html'`)이거나 표기가 하나도 없는
+ * 문서에서만 값이 빠지면, 같은 게시판인데 문서마다 화면이 달라진다.
+ *
+ * 바뀌는 범위는 그 칸 하나다. 본문 치환·자동 영역 규칙은 전과 같고, 위키가 **아닌**
+ * 게시판에는 미들웨어가 여기까지 오지 않으므로 응답 바이트가 설치 전과 같다.
  *
  * ## `content_mode` 를 보는 이유
  *
@@ -45,21 +52,35 @@ final class DocPageRenderer
             return $response;
         }
 
+        $data['data'] = WikiBoardFlag::withWiki(
+            $data['data'],
+            WikiBoardFlag::pageValue(WikiBoardSettings::frontPostId($this->boardId))
+        );
+
         $body = $data['data']['content'] ?? null;
 
-        if (! is_string($body)) {
-            return $response;
+        if (is_string($body) && ($data['data']['content_mode'] ?? 'text') === 'html') {
+            $data['data']['content'] = $this->rewrite($body, $data['data']);
         }
 
-        if (($data['data']['content_mode'] ?? 'text') !== 'html') {
-            return $response;
-        }
+        // setData 는 이 응답이 쥐고 있는 인코딩 옵션 그대로 되쓴다.
+        $response->setData($data);
 
+        return $response;
+    }
+
+    /**
+     * 본문 하나를 위키 표기로 바꾸고 자동 영역을 붙인다.
+     *
+     * @param  array<string, mixed>  $post  상세 응답의 글 부분
+     */
+    private function rewrite(string $body, array $post): string
+    {
         $target = new DocTarget(
             $this->slug,
             $this->boardId,
-            (int) ($data['data']['id'] ?? 0),
-            TitleNormalizer::normalize((string) ($data['data']['title'] ?? '')),
+            (int) ($post['id'] ?? 0),
+            TitleNormalizer::normalize((string) ($post['title'] ?? '')),
         );
 
         $rewriter = new HtmlLinkRewriter($body);
@@ -79,17 +100,6 @@ final class DocPageRenderer
             ? DocFooterBuilder::build($this->slug, $context->footer, $labels)
             : '';
 
-        $final = $rewritten.$footer;
-
-        if ($final === $body) {
-            return $response;
-        }
-
-        $data['data']['content'] = $final;
-
-        // setData 는 이 응답이 쥐고 있는 인코딩 옵션 그대로 되쓴다 — 본문 밖은 바이트가 같다.
-        $response->setData($data);
-
-        return $response;
+        return $rewritten.$footer;
     }
 }

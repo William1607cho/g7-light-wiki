@@ -9,7 +9,7 @@ use Plugins\G7\Light\Wiki\Support\Doc\RandomDrawCache;
  * 무작위 목록 쿨다운의 **순수한 부분** — 키 조립과 "되쓸 수 있는 값인가" 판정.
  *
  * 실제 저장·만료는 코어 캐시가 하므로 여기서 시험하지 않는다(DB·프레임워크를 타지 않는
- * 시험만 둔다는 이 폴더의 방침). 쿨다운이 실제로 걸리는지는 스테이징 측정(E7)에서 잰다 —
+ * 시험만 둔다는 이 폴더의 방침). 쿨다운이 실제로 걸리는지는 스테이징 측정에서 잰다 —
  * 3초 안 연속 두 호출의 응답 해시가 같은지로 본다.
  */
 class RandomDrawCacheTest extends TestCase
@@ -21,8 +21,8 @@ class RandomDrawCacheTest extends TestCase
 
     public function test_회원과_비회원의_키가_다르다(): void
     {
-        $member = RandomDrawCache::key(8, 7, '10.0.0.1');
-        $guest = RandomDrawCache::key(8, null, '10.0.0.1');
+        $member = RandomDrawCache::key(8, 7, '10.0.0.1', 20);
+        $guest = RandomDrawCache::key(8, null, '10.0.0.1', 20);
 
         $this->assertNotSame($member, $guest);
     }
@@ -30,38 +30,52 @@ class RandomDrawCacheTest extends TestCase
     public function test_게시판마다_키가_갈린다(): void
     {
         $this->assertNotSame(
-            RandomDrawCache::key(8, 7, null),
-            RandomDrawCache::key(9, 7, null)
+            RandomDrawCache::key(8, 7, null, 20),
+            RandomDrawCache::key(9, 7, null, 20)
         );
         $this->assertNotSame(
-            RandomDrawCache::key(8, null, '10.0.0.1'),
-            RandomDrawCache::key(9, null, '10.0.0.1')
+            RandomDrawCache::key(8, null, '10.0.0.1', 20),
+            RandomDrawCache::key(9, null, '10.0.0.1', 20)
+        );
+    }
+
+    public function test_뽑는_개수마다_키가_갈린다(): void
+    {
+        // PC 한 쪽 20건 / 모바일 15건. 키를 나누지 않으면 PC 로 뽑은 직후 연 모바일이
+        // 20건짜리 직전 결과를 되써서 뜻 없는 2쪽 페이저가 다시 생긴다.
+        $this->assertNotSame(
+            RandomDrawCache::key(8, 7, null, 20),
+            RandomDrawCache::key(8, 7, null, 15)
+        );
+        $this->assertNotSame(
+            RandomDrawCache::key(8, null, '10.0.0.1', 20),
+            RandomDrawCache::key(8, null, '10.0.0.1', 15)
         );
     }
 
     public function test_요청자마다_키가_갈린다(): void
     {
         $this->assertNotSame(
-            RandomDrawCache::key(8, 7, null),
-            RandomDrawCache::key(8, 8, null)
+            RandomDrawCache::key(8, 7, null, 20),
+            RandomDrawCache::key(8, 8, null, 20)
         );
         $this->assertNotSame(
-            RandomDrawCache::key(8, null, '10.0.0.1'),
-            RandomDrawCache::key(8, null, '10.0.0.2')
+            RandomDrawCache::key(8, null, '10.0.0.1', 20),
+            RandomDrawCache::key(8, null, '10.0.0.2', 20)
         );
     }
 
     public function test_같은_요청자는_같은_키를_받는다(): void
     {
         $this->assertSame(
-            RandomDrawCache::key(8, null, '10.0.0.1'),
-            RandomDrawCache::key(8, null, '10.0.0.1')
+            RandomDrawCache::key(8, null, '10.0.0.1', 20),
+            RandomDrawCache::key(8, null, '10.0.0.1', 20)
         );
     }
 
     public function test_키에_방문자_주소_원문이_남지_않는다(): void
     {
-        $key = RandomDrawCache::key(8, null, '203.0.113.9');
+        $key = RandomDrawCache::key(8, null, '203.0.113.9', 20);
 
         $this->assertStringNotContainsString('203.0.113.9', $key);
         $this->assertStringContainsString(sha1('203.0.113.9'), $key);
@@ -72,8 +86,8 @@ class RandomDrawCacheTest extends TestCase
         // 인증 식별자가 0 이나 음수로 들어오는 경로는 없어야 하지만, 그때 회원 키를
         // 만들면 서로 다른 비회원이 한 칸을 나눠 쓰게 된다.
         $this->assertSame(
-            RandomDrawCache::key(8, null, '10.0.0.1'),
-            RandomDrawCache::key(8, 0, '10.0.0.1')
+            RandomDrawCache::key(8, null, '10.0.0.1', 20),
+            RandomDrawCache::key(8, 0, '10.0.0.1', 20)
         );
     }
 

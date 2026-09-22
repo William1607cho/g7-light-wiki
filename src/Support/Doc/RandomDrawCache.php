@@ -36,17 +36,19 @@ final class RandomDrawCache
     /**
      * 쿨다운 안이면 직전 결과를, 아니면 새로 뽑아 저장하고 그것을 돌려준다.
      *
+     * @param  int  $count  이번에 뽑을 개수 — 캐시 키에 들어간다
      * @param  callable(): list<int>  $draw  새로 뽑는 방법
      * @return list<int>
      */
-    public static function remember(int $boardId, Request $request, callable $draw): array
+    public static function remember(int $boardId, Request $request, int $count, callable $draw): array
     {
         $user = $request->user();
 
         $key = self::key(
             $boardId,
             $user === null ? null : (int) $user->getAuthIdentifier(),
-            $request->ip()
+            $request->ip(),
+            $count
         );
 
         try {
@@ -72,21 +74,26 @@ final class RandomDrawCache
     }
 
     /**
-     * 캐시 키 — 게시판별·요청자별로 갈린다.
+     * 캐시 키 — 게시판별·**뽑는 개수별**·요청자별로 갈린다.
      *
      * 비회원은 IP 로 가르되 **원문을 키에 남기지 않는다**(해시). 캐시 키는 운영 중에 눈에
      * 띄는 자리라 방문자 주소를 적어 둘 이유가 없다.
      *
+     * **개수가 키에 들어가는 이유**: 뽑는 개수는 그 요청의 한 쪽 개수를 따르므로 PC(20)와
+     * 모바일(15)이 다르다. 개수를 키에서 빼면 PC 로 뽑은 직후 3초 안에 연 모바일 화면이
+     * 20건짜리 직전 결과를 되써서, 한 쪽에 안 들어가는 5건 때문에 뜻 없는 2쪽 페이저가
+     * 다시 생긴다.
+     *
      * 봇 SSR 의 내부 호출은 전부 서버 자신의 주소로 모이므로 봇은 쿨다운 동안 같은 목록을
      * 본다 — 봇에게 보이는 무작위가 고정되는 것은 이미 받아들인 전제다.
      */
-    public static function key(int $boardId, ?int $userId, ?string $ip): string
+    public static function key(int $boardId, ?int $userId, ?string $ip, int $count): string
     {
         $identity = $userId !== null && $userId > 0
             ? 'u'.$userId
             : 'ip'.sha1((string) $ip);
 
-        return self::PREFIX.$boardId.':'.$identity;
+        return self::PREFIX.$boardId.':n'.$count.':'.$identity;
     }
 
     /**
