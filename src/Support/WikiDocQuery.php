@@ -254,7 +254,7 @@ final class WikiDocQuery
     {
         $max = max(1, $max);
 
-        $ids = DB::table((new Post)->getTable())
+        $ids = DB::table(WikiVisibility::postsTable())
             ->where('board_id', $boardId)
             ->whereNull('deleted_at')
             ->where('content', 'like', '%[[#%')
@@ -297,17 +297,11 @@ final class WikiDocQuery
      */
     private static function candidates(int $boardId, array $exclude): Builder
     {
-        $docs = (new WikiDoc)->getTable();
-        $posts = (new Post)->getTable();
-
-        $query = DB::table($docs.' as d')
-            ->join($posts.' as p', 'p.id', '=', 'd.post_id')
-            ->where('d.board_id', $boardId)
-            ->whereNull('p.deleted_at')
-            ->where('p.status', 'published')
-            ->where('p.is_secret', 0)
-            ->whereNull('p.parent_id')
-            ->select(['d.post_id', 'd.title', 'd.title_norm', 'd.edited_at', 'p.created_at']);
+        $query = WikiVisibility::apply(
+            DB::table(WikiVisibility::docsTable().' as d')
+                ->join(WikiVisibility::postsTable().' as p', 'p.id', '=', 'd.post_id')
+                ->where('d.board_id', $boardId)
+        )->select(['d.post_id', 'd.title', 'd.title_norm', 'd.edited_at', 'p.created_at']);
 
         $exclude = array_values(array_unique(array_filter(
             array_map(static fn ($id): int => (int) $id, $exclude),

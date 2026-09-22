@@ -459,51 +459,11 @@ class RenderWikiLinksExtension
                 return $members[TitleNormalizer::normalize($name)] ?? ['items' => [], 'more' => 0];
             },
             // 연표 — 인자가 있으면 그 문서와 그 문서를 링크한 문서들의 사건.
-            function (?string $docName) use ($boardId, &$eventsMemo): array {
-                $key = $docName ?? '';
-
-                return $eventsMemo[$key] ??= $this->timeline($boardId, $docName);
+            static function (?string $docName) use ($boardId, &$eventsMemo): array {
+                return $eventsMemo[$docName ?? ''] ??= WikiRefQuery::timelineFor($boardId, $docName);
             },
             self::docLabels(),
         );
-    }
-
-    /**
-     * 연표 자리표시가 쓸 사건 목록.
-     *
-     * 인자가 없으면 게시판 전체다(조회 1회). 인자가 있으면 그 문서와 **그 문서를 링크한
-     * 문서들**의 사건이다 — 대상 문서를 찾는 조회 1회가 더 붙는다.
-     *
-     * @return array{items: list<array{post_id: int, title: string, target: string, label: string}>, more: int}
-     */
-    private function timeline(int $boardId, ?string $docName): array
-    {
-        if ($docName === null || trim($docName) === '') {
-            return WikiRefQuery::events($boardId);
-        }
-
-        $normalized = TitleNormalizer::normalize($docName);
-
-        // 문서명은 실제 제목일 수도 별칭일 수도 있다.
-        $doc = WikiDocQuery::resolve($boardId, [$normalized])[$normalized]
-            ?? WikiRefQuery::aliasOwners($boardId, [$normalized])[$normalized]
-            ?? null;
-
-        if ($doc === null) {
-            return ['items' => [], 'more' => 0];
-        }
-
-        $postId = (int) $doc['post_id'];
-
-        // 그 문서 + 그 문서를 가리킨 문서들. 중복은 `eventsOf` 가 걸러 낸다.
-        $linkers = WikiRefQuery::backlinks($boardId, [$normalized], 0, WikiRefQuery::EVENT_LIMIT);
-
-        $ids = array_merge(
-            [$postId],
-            array_map(static fn (array $row): int => (int) $row['post_id'], $linkers['items']),
-        );
-
-        return WikiRefQuery::eventsOf($boardId, $ids);
     }
 
     /**

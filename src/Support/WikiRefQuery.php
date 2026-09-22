@@ -4,8 +4,6 @@ namespace Plugins\G7\Light\Wiki\Support;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
-use Modules\Sirsoft\Board\Models\Post;
-use Plugins\G7\Light\Wiki\Models\WikiDoc;
 use Plugins\G7\Light\Wiki\Models\WikiRef;
 
 /**
@@ -33,35 +31,6 @@ final class WikiRefQuery
 
     /** 연표 목록의 최대 건수 */
     public const EVENT_LIMIT = 200;
-
-    /**
-     * 글 하나가 가진 표기 전부 — 자기 분류 줄·별칭 줄과 역링크 대상 이름을 만든다.
-     *
-     * 조회 1회. 보이는 문서인지 따지지 않는다(자기 화면에 자기 것을 보이는 일이다).
-     *
-     * @return list<array{kind: string, target: string, target_norm: string, sort_key: ?string, label: ?string, seq: int}>
-     */
-    public static function own(int $postId): array
-    {
-        if ($postId < 1) {
-            return [];
-        }
-
-        return WikiRef::query()
-            ->where('post_id', $postId)
-            ->orderBy('seq')
-            ->orderBy('id')
-            ->get(['kind', 'target', 'target_norm', 'sort_key', 'label', 'seq'])
-            ->map(static fn (WikiRef $ref): array => [
-                'kind' => (string) $ref->kind,
-                'target' => (string) $ref->target,
-                'target_norm' => (string) $ref->target_norm,
-                'sort_key' => $ref->sort_key === null ? null : (string) $ref->sort_key,
-                'label' => $ref->label === null ? null : (string) $ref->label,
-                'seq' => (int) $ref->seq,
-            ])
-            ->all();
-    }
 
     /**
      * 별칭 → 그 별칭을 가진 문서. 조회 1회.
@@ -246,6 +215,45 @@ final class WikiRefQuery
     }
 
     /**
+     * `[[#연표]]` · `[[#연표|문서명]]` 이 쓸 사건 목록.
+     *
+     * 인자가 없으면 게시판 전체다(조회 1회). 인자가 있으면 **그 문서와 그 문서를 링크한
+     * 문서들**의 사건이다 — 대상 문서를 찾는 조회가 더 붙는다(문서명은 실제 제목일 수도
+     * 별칭일 수도 있다).
+     *
+     * 전에는 이 절차가 미들웨어에 있었다. 조회가 조회 계층 밖에 있으면 "문서 한 번 그리는 데
+     * 질의가 몇 번인가" 를 한자리에서 볼 수 없다.
+     *
+     * @return array{items: list<array{post_id: int, title: string, target: string, label: string}>, more: int}
+     */
+    public static function timelineFor(int $boardId, ?string $docName): array
+    {
+        if ($docName === null || trim($docName) === '') {
+            return self::events($boardId);
+        }
+
+        $normalized = TitleNormalizer::normalize($docName);
+
+        $doc = WikiDocQuery::resolve($boardId, [$normalized])[$normalized]
+            ?? self::aliasOwners($boardId, [$normalized])[$normalized]
+            ?? null;
+
+        if ($doc === null) {
+            return ['items' => [], 'more' => 0];
+        }
+
+        // 그 문서 + 그 문서를 가리킨 문서들. 중복은 `eventsOf` 가 걸러 낸다.
+        $linkers = self::backlinks($boardId, [$normalized], 0, self::EVENT_LIMIT);
+
+        $ids = array_merge(
+            [(int) $doc['post_id']],
+            array_map(static fn (array $row): int => (int) $row['post_id'], $linkers['items']),
+        );
+
+        return self::eventsOf($boardId, $ids);
+    }
+
+    /**
      * 이 이름들을 **가리킨** 문서의 글 ID — 봇 캐시 무효화가 쓴다. 조회 1회.
      *
      * 별칭이 바뀌면 그 별칭으로 링크를 건 문서들의 링크 색(있는 문서/없는 문서)이 달라진다.
@@ -324,19 +332,13 @@ final class WikiRefQuery
      */
     private static function visible(int $boardId, string $kind): Builder
     {
-        $refs = (new WikiRef)->getTable();
-        $docs = (new WikiDoc)->getTable();
-        $posts = (new Post)->getTable();
-
-        return DB::table($refs.' as r')
-            ->join($docs.' as d', 'd.post_id', '=', 'r.post_id')
-            ->join($posts.' as p', 'p.id', '=', 'r.post_id')
-            ->where('r.board_id', $boardId)
-            ->where('r.kind', $kind)
-            ->whereNull('p.deleted_at')
-            ->where('p.status', 'published')
-            ->where('p.is_secret', 0)
-            ->whereNull('p.parent_id');
+        return WikiVisibility::apply(
+            DB::table(WikiVisibility::refsTable().' as r')
+                ->join(WikiVisibility::docsTable().' as d', 'd.post_id', '=', 'r.post_id')
+                ->join(WikiVisibility::postsTable().' as p', 'p.id', '=', 'r.post_id')
+                ->where('r.board_id', $boardId)
+                ->where('r.kind', $kind)
+        );
     }
 
     /**
