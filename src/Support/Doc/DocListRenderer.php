@@ -9,8 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Modules\Sirsoft\Board\Http\Resources\PostCollection;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
+use Plugins\G7\Light\Wiki\Support\WikiBoardListQuery;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
-use Plugins\G7\Light\Wiki\Support\WikiDocListSource;
 use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
 
 /**
@@ -24,7 +24,7 @@ use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
  * |---|---|
  * | 검색어 있음 | 정규화 제목에 정규화 검색어가 **들어 있는** 문서. `title_norm` 오름차순 |
  * | `?sort_by=g7lw-recent` | **최근 수정순** 전체 문서. 페이지 넘김 있음 |
- * | `?sort_by=g7lw-random` | **무작위** 문서 10건. **1쪽 고정** |
+ * | `?sort_by=g7lw-random` | **무작위** 문서 20건. **1쪽 고정** |
  * | 그 밖(모드 없음·허용 밖 값) | **대문 글 1건**만 담은 목록. 대문이 지정돼 있지 않으면 원본 그대로 |
  *
  * **검색어가 모드보다 먼저다.** 화면에 검색창이 있고, 사용자가 방금 친 것이 검색어다.
@@ -36,6 +36,7 @@ use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
  *
  * 공지 글도 함께 걸러진다. 코어는 공지를 별도 목록이 아니라 같은 `data` 배열 앞에 섞어
  * 보내므로(`PostRepository::buildSortedPostList()`), 목록을 갈아 끼우면 공지도 빠진다.
+ * **대문 글만은 공지여도 남는다** ({@see WikiBoardListQuery} 의 공지 예외).
  *
  * ## 항목을 손으로 만들지 않는다
  *
@@ -100,7 +101,7 @@ final class DocListRenderer
         $total = new BoundedCount(
             count($postIds),
             $target['truncated'] ? TotalRelation::AtLeast : TotalRelation::Exact,
-            $target['truncated'] ? WikiDocListSource::LIST_LIMIT : null,
+            $target['truncated'] ? WikiBoardListQuery::LIST_LIMIT : null,
         );
 
         $collection = new PostCollection(new Paginator($posts, $perPage, $page));
@@ -169,16 +170,16 @@ final class DocListRenderer
             return null;
         }
 
-        $found = WikiDocListSource::searchPostIds(
+        $found = WikiBoardListQuery::searchPostIds(
             $this->slug,
             $this->boardId,
             $normalized,
-            WikiDocListSource::LIST_LIMIT
+            WikiBoardListQuery::LIST_LIMIT
         );
 
         return [
             'ids' => $found,
-            'truncated' => count($found) >= WikiDocListSource::LIST_LIMIT,
+            'truncated' => count($found) >= WikiBoardListQuery::LIST_LIMIT,
         ];
     }
 
@@ -189,15 +190,15 @@ final class DocListRenderer
      */
     private function recentIds(): array
     {
-        $ids = WikiDocListSource::recentPostIds(
+        $ids = WikiBoardListQuery::recentPostIds(
             $this->slug,
             $this->boardId,
-            WikiDocListSource::LIST_LIMIT
+            WikiBoardListQuery::LIST_LIMIT
         );
 
         return [
             'ids' => $ids,
-            'truncated' => count($ids) >= WikiDocListSource::LIST_LIMIT,
+            'truncated' => count($ids) >= WikiBoardListQuery::LIST_LIMIT,
         ];
     }
 
@@ -214,15 +215,15 @@ final class DocListRenderer
         $ids = RandomDrawCache::remember(
             $this->boardId,
             $this->request,
-            fn (): array => WikiDocListSource::randomPostIds(
+            fn (): array => WikiBoardListQuery::randomPostIds(
                 $this->slug,
                 $this->boardId,
-                WikiDocListSource::RANDOM_COUNT
+                WikiBoardListQuery::RANDOM_COUNT
             )
         );
 
         return [
-            'ids' => WikiDocListSource::visiblePostIds($this->slug, $ids),
+            'ids' => WikiBoardListQuery::visiblePostIds($this->slug, $this->boardId, $ids),
             'truncated' => false,
         ];
     }
@@ -241,7 +242,7 @@ final class DocListRenderer
         }
 
         return [
-            'ids' => WikiDocListSource::visiblePostIds($this->slug, [$frontPostId]),
+            'ids' => WikiBoardListQuery::visiblePostIds($this->slug, $this->boardId, [$frontPostId]),
             'truncated' => false,
         ];
     }

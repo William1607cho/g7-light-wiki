@@ -21,8 +21,12 @@ use Modules\Sirsoft\Board\Models\Post;
  * |---|---|---|
  * | `deleted_at IS NULL` | 건다 | 지운 글 |
  * | `parent_id IS NULL` | 건다 (원글만) | 답글은 문서가 아니다. 코어는 답글을 부모 밑에 따로 붙인다 |
- * | `is_notice = false` | 건다 (공지는 따로 앞에 붙인다) | 문서 목록에 공지가 원글처럼 섞이면 순서가 무너진다 |
+ * | `is_notice = false` (**대문 글은 예외**) | 건다 (공지는 따로 앞에 붙인다) | 문서 목록에 공지가 원글처럼 섞이면 순서가 무너진다 |
  * | 권한 범위 스코프 | 건다 | `self`·`role` 스코프를 코어 헬퍼가 그대로 판정한다 |
+ *
+ * **대문 글은 공지여도 목록에서 빠지지 않는다.** 운영자가 대문을 공지로 지정해 두는 것은
+ * 있을 수 있는 구성이고, 그때 기본 목록(대문 1건)이 비어 버리면 게시판을 열 방법이 사라진다.
+ * 예외는 공지 조건 **하나에만** 걸린다 — 삭제된 대문, 답글인 대문, 권한 밖의 대문은 그대로 빠진다.
  *
  * **`status` 와 `is_secret` 은 걸지 않는다 — 코어도 걸지 않는다.** 블라인드·비밀글은 행과
  * 제목은 보이고 본문 미리보기만 가리는 것이 이 모듈의 방식이고(`PostResource::
@@ -35,7 +39,7 @@ use Modules\Sirsoft\Board\Models\Post;
  * 토글을 보지 않고 삭제글을 항상 뺀다**(2026-09-22 결정, 별도 작업). 그래서 관리자가 토글을
  * 켜도 위키 게시판 목록에는 삭제된 문서가 나오지 않는다.
  */
-final class WikiDocListSource
+final class WikiBoardListQuery
 {
     /**
      * 목록 응답이 한 번에 다룰 문서의 최대 수.
@@ -47,7 +51,7 @@ final class WikiDocListSource
     public const LIST_LIMIT = 2000;
 
     /** 무작위 모드가 한 쪽에 늘어놓는 문서 수 (1쪽 고정이라 이것이 전부다) */
-    public const RANDOM_COUNT = 10;
+    public const RANDOM_COUNT = 20;
 
     /**
      * 제목 검색 — 정규화 제목에 정규화 검색어가 **들어 있는** 문서의 글 ID.
@@ -129,7 +133,7 @@ final class WikiDocListSource
      * @param  list<int>  $postIds  후보 글 ID (순서가 결과 순서가 된다)
      * @return list<int>
      */
-    public static function visiblePostIds(string $slug, array $postIds): array
+    public static function visiblePostIds(string $slug, int $boardId, array $postIds): array
     {
         if ($postIds === []) {
             return [];
@@ -138,6 +142,7 @@ final class WikiDocListSource
         $query = self::coreListConditions(
             Post::query()->whereIn(WikiVisibility::postsTable().'.id', $postIds),
             $slug,
+            $boardId,
             WikiVisibility::postsTable()
         );
 
@@ -176,7 +181,7 @@ final class WikiDocListSource
             ->join(WikiVisibility::docsTable().' as d', 'd.post_id', '=', $posts.'.id')
             ->where('d.board_id', $boardId);
 
-        return self::coreListConditions($query, $slug, $posts);
+        return self::coreListConditions($query, $slug, $boardId, $posts);
     }
 
     /**
@@ -185,18 +190,41 @@ final class WikiDocListSource
      * 범위 스코프는 코어 헬퍼를 그대로 부른다(부모 메서드 본문을 옮겨 적지 않는다).
      * 권한 식별자는 코어 `PostService::getPosts()` 가 사용자 컨텍스트에서 쓰는 것과 같다.
      *
+     * 공지 조건만 **대문 글을 예외로 둔다**. 예외를 묶음(`where(function …)`) 안에 두는 것이
+     * 중요하다 — `orWhere` 를 바깥에 풀어 놓으면 삭제·답글 조건까지 함께 무력화된다.
+     *
      * @param  string  $posts  코어 글 표의 이름 또는 별칭
      */
-    private static function coreListConditions(Builder $query, string $slug, string $posts): Builder
+    private static function coreListConditions(Builder $query, string $slug, int $boardId, string $posts): Builder
     {
+        $exemptPostId = self::noticeExemptId(WikiBoardSettings::frontPostId($boardId));
+
         $query
             ->whereNull($posts.'.deleted_at')
             ->whereNull($posts.'.parent_id')
-            ->where($posts.'.is_notice', false);
+            ->where(static function (Builder $notice) use ($posts, $exemptPostId): void {
+                $notice->where($posts.'.is_notice', false);
+
+                if ($exemptPostId !== null) {
+                    $notice->orWhere($posts.'.id', $exemptPostId);
+                }
+            });
 
         PermissionHelper::applyPermissionScope($query, 'sirsoft-board.'.$slug.'.posts.read');
 
         return $query;
+    }
+
+    /**
+     * 공지 조건에서 예외로 둘 글 ID — **대문 글 하나뿐**이다.
+     *
+     * 대문이 없거나(`null`) 쓸 수 없는 값(0·음수)이면 예외가 없다 — 그때는 공지가 전부 빠진다.
+     * 이 판정만 따로 떼어 둔 이유는, 쿼리를 타지 않고도 "대문만 예외" 라는 규칙을 시험할 수 있게
+     * 하기 위해서다({@see \Plugins\G7\Light\Wiki\Tests\Unit\WikiBoardListQueryTest}).
+     */
+    public static function noticeExemptId(?int $frontPostId): ?int
+    {
+        return $frontPostId !== null && $frontPostId > 0 ? $frontPostId : null;
     }
 
     /**
