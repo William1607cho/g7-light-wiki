@@ -14,6 +14,16 @@ return [
         'tour_created' => 'Recently created',
         'tour_random' => 'Random documents',
     ],
+    'doc' => [
+        'categories' => 'Categories',
+        'category_members' => 'Documents in This Category',
+        'aliases' => 'Also Known As',
+        'backlinks' => 'Documents Linking Here',
+        'timeline' => 'Timeline',
+        'more' => 'and :count more',
+        'empty' => 'No documents yet.',
+        'timeline_empty' => 'No events yet.',
+    ],
     'settings' => [
         'saved' => 'Wiki board settings saved.',
         'save_failed' => 'Could not save the wiki board settings.',

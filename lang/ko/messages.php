@@ -14,6 +14,16 @@ return [
         'tour_created' => '최근 작성 문서',
         'tour_random' => '랜덤 문서',
     ],
+    'doc' => [
+        'categories' => '분류',
+        'category_members' => '이 분류에 속한 문서',
+        'aliases' => '다른 이름',
+        'backlinks' => '이 문서를 가리키는 문서',
+        'timeline' => '연표',
+        'more' => '외 :count건',
+        'empty' => '아직 문서가 없습니다.',
+        'timeline_empty' => '아직 사건이 없습니다.',
+    ],
     'settings' => [
         'saved' => '위키 게시판 설정을 저장했습니다.',
         'save_failed' => '위키 게시판 설정 저장에 실패했습니다.',

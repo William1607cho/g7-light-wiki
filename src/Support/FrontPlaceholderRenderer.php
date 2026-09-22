@@ -33,6 +33,9 @@ final class FrontPlaceholderRenderer
      * @param  \Closure(): ?int  $random  랜덤 문서 1건 공급자 (없으면 null)
      * @param  \Closure(int): list<array{post_id: int, title: string}>  $randomMany  랜덤 문서 N 건 공급자
      * @param  array{random: string, other: string, empty: string, tour_created: string, tour_random: string}  $labels  언어 파일 문구
+     * @param  \Closure(string): array{items: list<array{post_id: int, title: string}>, more: int}  $members  분류 소속 목록 공급자
+     * @param  \Closure(?string): array{items: list<array{post_id: int, title: string, target: string, label: string}>, more: int}  $events  사건 목록 공급자
+     * @param  array<string, string>  $docLabels  자동 영역·연표 문구
      */
     public function __construct(
         private readonly string $slug,
@@ -43,6 +46,10 @@ final class FrontPlaceholderRenderer
         private readonly \Closure $random,
         private readonly \Closure $randomMany,
         private readonly array $labels,
+        // 2단계에서 더한 것들 — 1단계·1.5단계의 호출부와 단위 시험이 8인자 그대로 쓰게 기본값을 둔다.
+        private readonly ?\Closure $members = null,
+        private readonly ?\Closure $events = null,
+        private readonly array $docLabels = [],
     ) {}
 
     /**
@@ -83,6 +90,8 @@ final class FrontPlaceholderRenderer
                 $empty,
             ),
             WikiMarkupParser::PLACEHOLDER_TOUR => $this->tourHtml($argument, $empty),
+            WikiMarkupParser::PLACEHOLDER_CATEGORY => $this->categoryHtml($argument),
+            WikiMarkupParser::PLACEHOLDER_TIMELINE => $this->timelineHtml($argument),
             default => null,
         };
     }
@@ -125,6 +134,64 @@ final class FrontPlaceholderRenderer
             $this->labels['tour_random'] ?? '',
             $empty,
         );
+    }
+
+    /**
+     * `[[#분류|이름]]` — 그 분류에 속한 문서 목록.
+     *
+     * 이름이 없는 `[[#분류]]` 는 **원문 그대로** 둔다(`null`). 어느 분류인지 알 수 없는데
+     * 빈 목록을 그리면 "속한 문서가 없는 분류" 로 잘못 읽힌다.
+     */
+    private function categoryHtml(mixed $argument): ?string
+    {
+        if ($this->members === null || ! is_string($argument) || trim($argument) === '') {
+            return null;
+        }
+
+        $found = ($this->members)(trim($argument));
+
+        return WikiHtml::docSection(
+            $this->slug,
+            $this->docLabels['category_members'] ?? '',
+            $found['items'],
+            $found['more'],
+            'g7lw-category-members',
+            $this->moreLabel($found['more']),
+        ) ?: '<p class="g7lw-category-members g7lw-empty">'
+            .htmlspecialchars($this->docLabels['empty'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'</p>';
+    }
+
+    /**
+     * `[[#연표]]` · `[[#연표|문서명]]` — 사건 목록.
+     */
+    private function timelineHtml(mixed $argument): ?string
+    {
+        if ($this->events === null) {
+            return null;
+        }
+
+        $name = is_string($argument) && trim($argument) !== '' ? trim($argument) : null;
+        $found = ($this->events)($name);
+
+        return WikiHtml::timelineList(
+            $this->slug,
+            $found['items'],
+            $found['more'],
+            $this->docLabels['timeline_empty'] ?? '',
+            $this->moreLabel($found['more']),
+        );
+    }
+
+    /**
+     * "외 N건" 문구 — 자른 것이 없으면 빈 문자열.
+     */
+    private function moreLabel(int $more): string
+    {
+        if ($more < 1) {
+            return '';
+        }
+
+        return str_replace(':count', (string) $more, $this->docLabels['more'] ?? '');
     }
 
     /**
