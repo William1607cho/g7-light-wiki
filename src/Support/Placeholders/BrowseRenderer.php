@@ -3,7 +3,7 @@
 namespace Plugins\G7\Light\Wiki\Support\Placeholders;
 
 use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
-use Plugins\G7\Light\Wiki\Support\WikiHtml;
+use Plugins\G7\Light\Wiki\Support\WikiHtml\Lists;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
 
@@ -30,7 +30,7 @@ final class BrowseRenderer implements Renderer
     {
         $limit = Limit::orDefault($argument, WikiDocQuery::TOUR_DEFAULT, WikiDocQuery::RECENT_MAX);
 
-        return WikiHtml::tour(
+        return Lists::tour(
             $this->slug,
             $this->source->created($limit),
             $this->source->randomMany($limit),

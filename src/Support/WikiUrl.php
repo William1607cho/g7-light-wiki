@@ -22,14 +22,6 @@ final class WikiUrl
     }
 
     /**
-     * 게시판 목록 화면.
-     */
-    public static function board(string $slug): string
-    {
-        return '/board/'.rawurlencode($slug);
-    }
-
-    /**
      * 글 작성 화면.
      */
     public static function write(string $slug): string

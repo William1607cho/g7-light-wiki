@@ -2,7 +2,7 @@
 
 namespace Plugins\G7\Light\Wiki\Support\Placeholders;
 
-use Plugins\G7\Light\Wiki\Support\WikiHtml;
+use Plugins\G7\Light\Wiki\Support\WikiHtml\Lists;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
 
@@ -31,7 +31,7 @@ final class TimelineRenderer implements Renderer
 
         $found = $this->source->timeline($docName);
 
-        return WikiHtml::timelineList(
+        return Lists::timeline(
             $this->slug,
             $found['items'],
             $found['more'],

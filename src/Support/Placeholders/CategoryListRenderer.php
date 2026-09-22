@@ -3,6 +3,7 @@
 namespace Plugins\G7\Light\Wiki\Support\Placeholders;
 
 use Plugins\G7\Light\Wiki\Support\WikiHtml;
+use Plugins\G7\Light\Wiki\Support\WikiHtml\Footer;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
 
@@ -36,7 +37,7 @@ final class CategoryListRenderer implements Renderer
 
         $found = $this->source->membersOf(trim($argument));
 
-        return WikiHtml::docSection(
+        return Footer::section(
             $this->slug,
             $this->labels->categoryMembers(),
             $found['items'],

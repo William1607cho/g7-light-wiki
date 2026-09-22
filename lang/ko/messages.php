@@ -19,7 +19,6 @@ return [
         'category_members' => '이 분류에 속한 문서',
         'aliases' => '다른 이름',
         'backlinks' => '이 문서를 가리키는 문서',
-        'timeline' => '연표',
         'more' => '외 :count건',
         'empty' => '아직 문서가 없습니다.',
         'timeline_empty' => '아직 사건이 없습니다.',

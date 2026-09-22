@@ -54,34 +54,6 @@ final class HtmlLinkRewriter
     }
 
     /**
-     * 문서 링크 표기의 대상 제목 목록 (원문 그대로, 중복 제거, 등장 순서).
-     *
-     * 호출부는 이 목록을 정규화해 **조회 1회**로 존재 여부를 판정한다.
-     *
-     * @return list<string>
-     */
-    public function linkTargets(): array
-    {
-        $this->load();
-
-        $targets = [];
-
-        foreach ($this->matches as $match) {
-            foreach ($match['tokens'] as $token) {
-                if ($token['kind'] !== WikiMarkupParser::KIND_LINK) {
-                    continue;
-                }
-
-                if (! in_array($token['target'], $targets, true)) {
-                    $targets[] = $token['target'];
-                }
-            }
-        }
-
-        return $targets;
-    }
-
-    /**
      * 본문의 모든 표기 토큰 — **문서 순서**.
      *
      * 저장 시점 추출(`light_wiki_refs`)이 쓴다. 표시 시점 치환과 **같은 파서·같은 순회**를
@@ -102,27 +74,6 @@ final class HtmlLinkRewriter
         }
 
         return $all;
-    }
-
-    /**
-     * 자리표시(`[[#…]]`) 표기가 하나라도 있는가.
-     *
-     * 호출부는 이것이 거짓이면 자리표시 렌더러를 **아예 만들지 않는다** — 렌더러를 만들면
-     * 읽기 권한 판정이 한 번 더 도므로, 자리표시가 없는 문서에는 그 비용을 얹지 않는다.
-     */
-    public function hasPlaceholder(): bool
-    {
-        $this->load();
-
-        foreach ($this->matches as $match) {
-            foreach ($match['tokens'] as $token) {
-                if ($token['kind'] === WikiMarkupParser::KIND_PLACEHOLDER) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /**

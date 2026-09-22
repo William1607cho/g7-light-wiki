@@ -2,12 +2,14 @@
 
 namespace Plugins\G7\Light\Wiki\Support;
 
+use Plugins\G7\Light\Wiki\Support\WikiHtml\Footer;
+
 /**
  * 문서 본문 뒤에 자동으로 붙는 영역을 조립하는 순수 클래스 (DB·HTTP·설정 접근 없음).
  *
- * 조회는 호출부({@see \Plugins\G7\Light\Wiki\Http\Middleware\RenderWikiLinksExtension})가
- * 하고, 여기서는 **이미 받아 온 것을 HTML 로 엮기만** 한다. 그래야 조회 횟수가 한곳에서
- * 보이고, 이 클래스는 가짜 목록만으로 시험할 수 있다.
+ * 조회는 호출부({@see \Plugins\G7\Light\Wiki\Support\Doc\DocContext})가 하고, 여기서는
+ * **이미 받아 온 것을 HTML 로 엮기만** 한다. 그래야 조회 횟수가 한곳에서 보이고,
+ * 이 클래스는 가짜 목록과 문구만으로 시험할 수 있다.
  *
  * ## 붙는 순서 (위에서부터)
  *
@@ -39,7 +41,7 @@ final class DocFooterBuilder
         $members = $parts['category_members'] ?? null;
 
         if (is_array($members)) {
-            $blocks[] = WikiHtml::docSection(
+            $blocks[] = Footer::section(
                 $slug,
                 $labels->categoryMembers(),
                 $members['items'],
@@ -52,13 +54,13 @@ final class DocFooterBuilder
         $aliases = $parts['aliases'] ?? [];
 
         if ($aliases !== []) {
-            $blocks[] = WikiHtml::aliasLine($labels->aliases(), $aliases);
+            $blocks[] = Footer::aliasLine($labels->aliases(), $aliases);
         }
 
         $backlinks = $parts['backlinks'] ?? null;
 
         if (is_array($backlinks)) {
-            $blocks[] = WikiHtml::docSection(
+            $blocks[] = Footer::section(
                 $slug,
                 $labels->backlinks(),
                 $backlinks['items'],
@@ -71,9 +73,9 @@ final class DocFooterBuilder
         $categories = $parts['categories'] ?? [];
 
         if ($categories !== []) {
-            $blocks[] = WikiHtml::categoryLine($labels->categories(), $categories);
+            $blocks[] = Footer::categoryLine($labels->categories(), $categories);
         }
 
-        return WikiHtml::footer($blocks);
+        return Footer::wrap($blocks);
     }
 }

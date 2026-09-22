@@ -19,7 +19,6 @@ return [
         'category_members' => 'Documents in This Category',
         'aliases' => 'Also Known As',
         'backlinks' => 'Documents Linking Here',
-        'timeline' => 'Timeline',
         'more' => 'and :count more',
         'empty' => 'No documents yet.',
         'timeline_empty' => 'No events yet.',

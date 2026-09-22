@@ -3,6 +3,7 @@
 namespace Plugins\G7\Light\Wiki\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Plugins\G7\Light\Wiki\Support\Doc\TokenSet;
 use Plugins\G7\Light\Wiki\Support\HtmlLinkRewriter;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
 
@@ -81,10 +82,13 @@ class HtmlLinkRewriterTest extends TestCase
 
     public function test_링크_대상을_중복_없이_등장_순서로_모은다(): void
     {
-        $rewriter = new HtmlLinkRewriter('<p>[[가]] [[나]] [[가]] <code>[[다]]</code> [[분류:라]]</p>');
+        // 모으는 일은 `TokenSet` 이 한다 — 전에는 `HtmlLinkRewriter::linkTargets()` 였는데
+        // 쓰는 곳이 없어졌고(토큰 전체를 받아 종류별로 나눈다) 이 시험만 남아 있었다.
+        $rewriter = new HtmlLinkRewriter('<p>[[가]] [[나]] [[가]] [[분류:라]]</p>');
+        $tokens = new TokenSet($rewriter->tokens());
 
-        $this->assertSame(['가', '나', '다'], array_slice($rewriter->linkTargets(), 0, 3));
-        $this->assertNotContains('분류:라', $rewriter->linkTargets());
+        $this->assertSame(['가', '나'], $tokens->targetsOf(WikiMarkupParser::KIND_LINK));
+        $this->assertSame(['라'], $tokens->targetsOf(WikiMarkupParser::KIND_CATEGORY));
     }
 
     public function test_여러_노드에_걸친_표기는_표기가_아니다(): void

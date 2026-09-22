@@ -2,7 +2,7 @@
 
 namespace Plugins\G7\Light\Wiki\Support\Placeholders;
 
-use Plugins\G7\Light\Wiki\Support\WikiHtml;
+use Plugins\G7\Light\Wiki\Support\WikiHtml\Lists;
 use Plugins\G7\Light\Wiki\Support\WikiIndexBuilder;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
@@ -27,7 +27,7 @@ final class IndexRenderer implements Renderer
 
     public function render(string $name, mixed $argument): ?string
     {
-        return WikiHtml::indexList(
+        return Lists::index(
             $this->slug,
             WikiIndexBuilder::build($this->source->index()),
             $this->labels->other(),

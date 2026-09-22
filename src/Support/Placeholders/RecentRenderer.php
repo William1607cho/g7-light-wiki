@@ -3,7 +3,7 @@
 namespace Plugins\G7\Light\Wiki\Support\Placeholders;
 
 use Plugins\G7\Light\Wiki\Support\WikiDocQuery;
-use Plugins\G7\Light\Wiki\Support\WikiHtml;
+use Plugins\G7\Light\Wiki\Support\WikiHtml\Lists;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
 
@@ -32,7 +32,7 @@ final class RecentRenderer implements Renderer
     public function render(string $name, mixed $argument): ?string
     {
         if ($name === WikiMarkupParser::PLACEHOLDER_RECENT_CREATED) {
-            return WikiHtml::createdList(
+            return Lists::created(
                 $this->slug,
                 $this->source->created(
                     Limit::orDefault($argument, WikiDocQuery::CREATED_DEFAULT, WikiDocQuery::RECENT_MAX)
@@ -41,7 +41,7 @@ final class RecentRenderer implements Renderer
             );
         }
 
-        return WikiHtml::recentList(
+        return Lists::recent(
             $this->slug,
             $this->source->recent(
                 Limit::orDefault($argument, WikiDocQuery::RECENT_DEFAULT, WikiDocQuery::RECENT_MAX)

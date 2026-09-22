@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Placeholder headings size with the body text (`1.25em`) instead of a fixed `1.125rem`, so a
   site that enlarges its body text keeps the heading proportional.
+- 내부 구조 정리(동작 변경 없음).
 
 ### Added (1.5단계까지)
 

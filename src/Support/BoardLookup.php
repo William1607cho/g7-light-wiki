@@ -60,12 +60,4 @@ final class BoardLookup
         return self::$slugById[$boardId];
     }
 
-    /**
-     * 시험·명령에서 캐시를 비운다.
-     */
-    public static function flush(): void
-    {
-        self::$idBySlug = [];
-        self::$slugById = [];
-    }
 }
