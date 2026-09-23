@@ -12,7 +12,8 @@ use Plugins\G7\Light\Wiki\Support\Setup\BoardProvisioner;
 use Plugins\G7\Light\Wiki\Support\Setup\ManagedBoardList;
 use Plugins\G7\Light\Wiki\Support\Setup\SetupRejected;
 use Plugins\G7\Light\Wiki\Support\Setup\SetupSettings;
-use Plugins\G7\Light\Wiki\Support\Setup\SetupSettingsPatch;
+use Plugins\G7\Light\Wiki\Support\Setup\SetupStatusQuery;
+use Plugins\G7\Light\Wiki\Support\Setup\SetupStatusView;
 use Plugins\G7\Light\Wiki\Support\Setup\WikiRelease;
 use Plugins\G7\Light\Wiki\Support\Setup\WikiSetup;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
@@ -30,36 +31,23 @@ class WikiSetupAdminController extends AdminBaseController
     /**
      * 상태·작성자 후보·위키화 가능한 게시판·관리 게시판.
      */
-    public function show(SetupSettings $settings, AuthorCandidates $authors, BoardProvisioner $provisioner): JsonResponse
-    {
+    public function show(
+        SetupSettings $settings,
+        AuthorCandidates $authors,
+        BoardProvisioner $provisioner,
+        SetupStatusQuery $status,
+    ): JsonResponse {
         $current = $settings->current();
-        $state = SetupSettingsPatch::state($current);
-        $fronts = [];
-
-        foreach (WikiBoardSettings::normalize($current[WikiBoardSettings::KEY] ?? []) as $row) {
-            $fronts[$row['board_id']] = $row['front_post_id'];
-        }
-
         $rows = ManagedBoardList::normalize($current[ManagedBoardList::KEY] ?? []);
-        $labels = $provisioner->labels(ManagedBoardList::boardIds($rows));
 
-        $managed = array_map(static fn (array $row): array => [
-            'board_id' => $row['board_id'],
-            'name' => $labels[$row['board_id']]['name'] ?? null,
-            'slug' => $labels[$row['board_id']]['slug'] ?? null,
-            'exists' => isset($labels[$row['board_id']]),
-            'origin' => $row['origin'],
-            'front_post_id' => $fronts[$row['board_id']] ?? null,
-            'set_up_at' => $row['set_up_at'],
-        ], $rows);
-
-        return ResponseHelper::success('common.success', [
-            'setup_completed' => $state['completed_at'] !== null,
-            'last_author_id' => $state['last_author_id'],
-            'author_candidates' => $authors->list(),
-            'convertible_boards' => $provisioner->convertible(),
-            'managed_boards' => $managed,
-        ]);
+        return ResponseHelper::success('common.success', SetupStatusView::build(
+            $current,
+            $authors->list(),
+            $provisioner->convertible(),
+            $provisioner->labels(ManagedBoardList::boardIds($rows)),
+            $status->liveSeedCounts($rows),
+            $status->userNames(array_map(static fn (array $row): ?int => $row['author_id'], $rows)),
+        ));
     }
 
     /**

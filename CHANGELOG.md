@@ -79,6 +79,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Releasing a wiki (`DELETE …/wiki-setup/boards/{id}`) removes a set-up board from the wiki
   settings and deletes this plugin's index rows for it. The board and its posts stay; `[[…]]`
   markup shows as plain text again. Only boards set up by this plugin can be released there.
+- Settings screen for the set-up API. A new "Set Up a Wiki Board" tab (opened by default) holds
+  the set-up form (create a new board or turn an empty board into a wiki, plus the seed author),
+  the list of boards set up here with a release button behind a confirmation dialog, and notes
+  about home widgets, menus and uninstalling. A "please finish setting up" banner shows while no
+  set-up board exists. The previous screen moved unchanged into a second tab. Errors show the
+  server's message and field errors as returned; the screen decides nothing on its own.
+- `GET …/wiki-setup` now also returns `needs_setup`, `default_author_id` and, per set-up board,
+  `seed_count` (seed posts still alive in that board) and `author` (`{id, name}`). Existing
+  fields are unchanged.
 - Uninstalling is refused while any board set up by this plugin still exists. Uninstalling never
   deletes boards or posts; tables and settings are dropped by the core only with `--delete-data`,
   and the refusal check reads no plugin table, so it is safe when those tables are already gone.
