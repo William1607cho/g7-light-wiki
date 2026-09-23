@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - A board can be converted only when it has no post rows at all — trashed posts, replies and
     notices included (the `posts_count` column skips trashed posts) — and no categories.
   - The seed author is chosen per request from users with the `admin` role.
+  - After the commit the bot (SSR) cache of the three seed documents is cleared. The board
+    module renders and caches a post's bot page the moment the post is created, which here is
+    before the board is registered as a wiki, so the cached page would show raw `[[…]]` markup
+    until it expired.
   - Boards set up this way are recorded in two new settings keys, `managed_boards` and
     `setup_state`. Boards registered by hand in `wiki_boards` are not recorded and keep working
     exactly as before.

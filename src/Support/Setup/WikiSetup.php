@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Modules\Sirsoft\Board\Models\Board;
 use Modules\Sirsoft\Board\Services\BoardService;
+use Plugins\G7\Light\Wiki\Support\FrontCacheInvalidator;
 
 /**
  * 세트 설치 — 게시판 마련부터 설정 저장까지 한 트랜잭션.
@@ -18,7 +19,8 @@ use Modules\Sirsoft\Board\Services\BoardService;
  *    실패하면 예외를 던져 1~2 를 되돌린다.
  *
  * 커밋 뒤 게시판 목록 캐시를 한 번 더 지운다 — 트랜잭션 안의 캐시 삭제와 커밋 사이에 다른
- * 요청이 옛 목록을 다시 채웠을 수 있다.
+ * 요청이 옛 목록을 다시 채웠을 수 있다. 시드 문서의 봇 캐시도 비운다 — 모듈이 글 생성 때 미리
+ * 렌더해 둔 화면은 위키 등록 전 모습이다(스테이징 실측: 대문 봇 화면 HIT, 위키 링크 0).
  *
  * ## 되돌릴 수 없는 것
  *
@@ -105,6 +107,9 @@ final class WikiSetup
         });
 
         $this->boards->clearAllBoardCaches();
+        // 모듈은 글을 만들 때 상세 봇 화면을 바로 렌더해 저장한다. 그때는 아직 위키 등록 전(커밋 전)이라
+        // 표기가 치환되지 않은 화면이 TTL 동안 남는다 — 커밋 뒤 시드 문서의 봇 캐시를 비운다.
+        FrontCacheInvalidator::invalidatePosts($result['slug'], array_values($result['seed_post_ids']), 0);
 
         return $result;
     }
