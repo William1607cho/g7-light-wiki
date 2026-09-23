@@ -121,7 +121,7 @@
                             }
                         ],
                         "id": "setup_needs_banner",
-                        "if": "{{wikiSetup?.data?.data?.needs_setup === true}}"
+                        "if": "{{wikiSetup?.data?.needs_setup === true}}"
                     },
                     {
                         "id": "light_wiki_tabs",
@@ -335,7 +335,7 @@
                                                             "name": "setup_board",
                                                             "className": "w-full sm:max-w-md",
                                                             "value": "{{_local.setup?.board_id ?? ''}}",
-                                                            "options": "{{[{label: '$t:g7-light-wiki.setup.board_placeholder', value: ''}].concat((wikiSetup?.data?.data?.convertible_boards ?? []).map(b => ({label: b.name + ' (' + b.slug + ')', value: String(b.id)})))}}"
+                                                            "options": "{{[{label: '$t:g7-light-wiki.setup.board_placeholder', value: ''}].concat((wikiSetup?.data?.convertible_boards ?? []).map(b => ({label: b.name + ' (' + b.slug + ')', value: String(b.id)})))}}"
                                                         },
                                                         "actions": [
                                                             {
@@ -349,7 +349,7 @@
                                                         ]
                                                     }
                                                 ],
-                                                "if": "{{(wikiSetup?.data?.data?.convertible_boards ?? []).length > 0}}"
+                                                "if": "{{(wikiSetup?.data?.convertible_boards ?? []).length > 0}}"
                                             },
                                             {
                                                 "type": "basic",
@@ -358,7 +358,7 @@
                                                     "className": "text-sm text-gray-500 dark:text-gray-400"
                                                 },
                                                 "text": "$t:g7-light-wiki.setup.no_convertible",
-                                                "if": "{{(wikiSetup?.data?.data?.convertible_boards ?? []).length === 0}}"
+                                                "if": "{{(wikiSetup?.data?.convertible_boards ?? []).length === 0}}"
                                             }
                                         ],
                                         "if": "{{_local.setup?.mode === 'convert'}}"
@@ -385,7 +385,7 @@
                                                     "name": "setup_author",
                                                     "className": "w-full sm:max-w-md",
                                                     "value": "{{String(_local.setup?.author_id ?? '')}}",
-                                                    "options": "{{(wikiSetup?.data?.data?.author_candidates ?? []).map(u => ({label: u.name, value: String(u.id)}))}}"
+                                                    "options": "{{(wikiSetup?.data?.author_candidates ?? []).map(u => ({label: u.name, value: String(u.id)}))}}"
                                                 },
                                                 "actions": [
                                                     {
@@ -653,7 +653,7 @@
                                             "className": "text-sm text-gray-500 dark:text-gray-400"
                                         },
                                         "text": "$t:g7-light-wiki.setup.list_empty",
-                                        "if": "{{(wikiSetup?.data?.data?.managed_boards ?? []).length === 0}}"
+                                        "if": "{{(wikiSetup?.data?.managed_boards ?? []).length === 0}}"
                                     },
                                     {
                                         "type": "basic",
@@ -736,7 +736,7 @@
                                                                 "type": "basic",
                                                                 "name": "Tr",
                                                                 "iteration": {
-                                                                    "source": "wikiSetup?.data?.data?.managed_boards ?? []",
+                                                                    "source": "wikiSetup?.data?.managed_boards ?? []",
                                                                     "item_var": "mb"
                                                                 },
                                                                 "props": {
@@ -849,7 +849,7 @@
                                                 ]
                                             }
                                         ],
-                                        "if": "{{(wikiSetup?.data?.data?.managed_boards ?? []).length > 0}}"
+                                        "if": "{{(wikiSetup?.data?.managed_boards ?? []).length > 0}}"
                                     }
                                 ],
                                 "id": "setup_managed_list"
@@ -1159,12 +1159,20 @@
                                                 "actions": [
                                                     {
                                                         "type": "click",
-                                                        "handler": "setState",
-                                                        "params": {
-                                                            "target": "local",
-                                                            "rows": "{{(_local.rows ?? []).filter(r => r.board_id !== board.id)}}",
-                                                            "dirty": true
-                                                        }
+                                                        "handler": "sequence",
+                                                        "actions": [
+                                                            {
+                                                                "handler": "setState",
+                                                                "params": {
+                                                                    "target": "global",
+                                                                    "unuseTarget": "{{{board_id: board.id, name: board.name ?? ('#' + board.id)}}}"
+                                                                }
+                                                            },
+                                                            {
+                                                                "handler": "openModal",
+                                                                "target": "light_wiki_unuse_modal"
+                                                            }
+                                                        ]
                                                     }
                                                 ],
                                                 "children": [
@@ -1455,11 +1463,108 @@
                     ]
                 }
             ]
+        },
+        {
+            "id": "light_wiki_unuse_modal",
+            "type": "composite",
+            "name": "Modal",
+            "props": {
+                "title": "$t:g7-light-wiki.settings.unuse_title",
+                "size": "sm"
+            },
+            "children": [
+                {
+                    "type": "basic",
+                    "name": "P",
+                    "props": {
+                        "className": "text-sm font-semibold"
+                    },
+                    "text": "{{_global.unuseTarget?.name ?? ''}}"
+                },
+                {
+                    "type": "basic",
+                    "name": "Ul",
+                    "props": {
+                        "className": "list-disc pl-5 mt-2 space-y-1 text-sm"
+                    },
+                    "children": [
+                        {
+                            "type": "basic",
+                            "name": "Li",
+                            "text": "$t:g7-light-wiki.settings.unuse_body_1"
+                        },
+                        {
+                            "type": "basic",
+                            "name": "Li",
+                            "text": "$t:g7-light-wiki.settings.unuse_body_2"
+                        },
+                        {
+                            "type": "basic",
+                            "name": "Li",
+                            "text": "$t:g7-light-wiki.settings.unuse_body_3"
+                        },
+                        {
+                            "type": "basic",
+                            "name": "Li",
+                            "text": "$t:g7-light-wiki.settings.unuse_body_4"
+                        }
+                    ]
+                },
+                {
+                    "type": "basic",
+                    "name": "Div",
+                    "props": {
+                        "className": "flex justify-end gap-2 mt-4"
+                    },
+                    "children": [
+                        {
+                            "type": "basic",
+                            "name": "Button",
+                            "props": {
+                                "type": "button",
+                                "className": "px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                            },
+                            "actions": [
+                                {
+                                    "type": "click",
+                                    "handler": "closeModal",
+                                    "target": "light_wiki_unuse_modal"
+                                }
+                            ],
+                            "text": "$t:g7-light-wiki.settings.unuse_cancel"
+                        },
+                        {
+                            "type": "basic",
+                            "name": "Button",
+                            "props": {
+                                "type": "button",
+                                "className": "px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600"
+                            },
+                            "actions": [
+                                {
+                                    "type": "click",
+                                    "handler": "sequence",
+                                    "actions": [
+                                        {
+                                            "handler": "setState",
+                                            "params": {
+                                                "target": "$parent._local",
+                                                "rows": "{{($parent._local.rows ?? []).filter(r => r.board_id !== _global.unuseTarget?.board_id)}}",
+                                                "dirty": true
+                                            }
+                                        },
+                                        {
+                                            "handler": "closeModal",
+                                            "target": "light_wiki_unuse_modal"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "text": "$t:g7-light-wiki.settings.unuse_confirm"
+                        }
+                    ]
+                }
+            ]
         }
-    ],
-    "state": {
-        "lightWikiTab": "setup",
-        "releaseTarget": null,
-        "isReleasing": false
-    }
+    ]
 }

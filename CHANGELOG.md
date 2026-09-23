@@ -85,6 +85,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   about home widgets, menus and uninstalling. A "please finish setting up" banner shows while no
   set-up board exists. The previous screen moved unchanged into a second tab. Errors show the
   server's message and field errors as returned; the screen decides nothing on its own.
+- The settings screen's first tab now reads the set-up status from the right place. It had been
+  looking one level too deep into the data source, so the author list, the list of set-up
+  boards and the "please finish setting up" banner all came out empty.
+- Releasing a hand-registered board on the second tab now asks for confirmation first, and says
+  that the change takes effect only after Save. What is saved is unchanged. The tabs are renamed
+  "Create a Wiki Board" and "Registered Manually", and the error for dropping a set-up board on the
+  second tab now points to the first tab's Release button.
 - `GET …/wiki-setup` now also returns `needs_setup`, `default_author_id` and, per set-up board,
   `seed_count` (seed posts still alive in that board) and `author` (`{id, name}`). Existing
   fields are unchanged.

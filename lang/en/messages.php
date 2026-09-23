@@ -41,7 +41,7 @@ return [
         'has_posts' => 'A board with posts cannot be turned into a wiki. Trashed posts, replies and notices count as posts.',
         'has_categories' => 'A board with categories cannot be turned into a wiki.',
         'not_managed' => 'Board :id was not set up by this plugin and cannot be released here.',
-        'managed_row_removed' => 'Board :id was set up by this plugin and cannot be removed on this screen. Release the wiki instead.',
+        'managed_row_removed' => 'Board :id was created on the first tab, "Create a Wiki Board", and cannot be removed here. Use Release on the first tab.',
         'uninstall_blocked' => ':count wiki board(s) are still registered. Release them in the settings before uninstalling.',
     ],
 ];

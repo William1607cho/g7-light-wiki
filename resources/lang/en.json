@@ -20,11 +20,18 @@
         "filter_placeholder": "Find by board name",
         "empty": "No boards.",
         "save_success": "Wiki board settings saved.",
-        "save_error": "Could not save the wiki board settings."
+        "save_error": "Could not save the wiki board settings.",
+        "unuse_title": "Release wiki",
+        "unuse_body_1": "The board and its posts are not deleted; they remain as ordinary board posts.",
+        "unuse_body_2": "[[link]] markup in documents will show as plain text.",
+        "unuse_body_3": "The search engine view may show the previous page for up to two hours.",
+        "unuse_body_4": "Press Save on this screen to apply it.",
+        "unuse_confirm": "Release",
+        "unuse_cancel": "Cancel"
     },
     "setup": {
-        "tab": "Set Up a Wiki Board",
-        "tab_boards": "Wiki Boards & Front Pages",
+        "tab": "Create a Wiki Board",
+        "tab_boards": "Registered Manually",
         "needs_setup_title": "Please finish setting up",
         "needs_setup_body": "No wiki board has been set up by this plugin yet. Create a new board below, or pick an empty board to turn into a wiki; the front page, index and syntax help documents are created along with it.",
         "card_title": "Set up a wiki board",
