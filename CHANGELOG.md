@@ -88,8 +88,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The settings screen's first tab now reads the set-up status from the right place. It had been
   looking one level too deep into the data source, so the author list, the list of set-up
   boards and the "please finish setting up" banner all came out empty.
-- Releasing a hand-registered board on the second tab now asks for confirmation first, and says
-  that the change takes effect only after Save. What is saved is unchanged. The tabs are renamed
+- Releasing a hand-registered board on the second tab now asks for confirmation first, in a box
+  that opens inside that row, and says that the change takes effect only after Save. Confirming
+  runs the same list update as before on the screen's own state, and what is saved is unchanged.
+  (A first attempt used a modal that wrote to the page state through `$parent._local`; the Save
+  button then still sent the old list, so a set-up board could be "removed" without the server
+  ever seeing it. The modal is gone.) The tabs are renamed
   "Create a Wiki Board" and "Registered Manually", and the error for dropping a set-up board on the
   second tab now points to the first tab's Release button.
 - `GET …/wiki-setup` now also returns `needs_setup`, `default_author_id` and, per set-up board,

@@ -1159,20 +1159,11 @@
                                                 "actions": [
                                                     {
                                                         "type": "click",
-                                                        "handler": "sequence",
-                                                        "actions": [
-                                                            {
-                                                                "handler": "setState",
-                                                                "params": {
-                                                                    "target": "global",
-                                                                    "unuseTarget": "{{{board_id: board.id, name: board.name ?? ('#' + board.id)}}}"
-                                                                }
-                                                            },
-                                                            {
-                                                                "handler": "openModal",
-                                                                "target": "light_wiki_unuse_modal"
-                                                            }
-                                                        ]
+                                                        "handler": "setState",
+                                                        "params": {
+                                                            "target": "local",
+                                                            "unuseConfirm": "{{board.id}}"
+                                                        }
                                                     }
                                                 ],
                                                 "children": [
@@ -1180,6 +1171,103 @@
                                                         "type": "basic",
                                                         "name": "Span",
                                                         "text": "$t:g7-light-wiki.settings.unuse"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "type": "basic",
+                                                "name": "Div",
+                                                "if": "{{_local.unuseConfirm === board.id}}",
+                                                "props": {
+                                                    "className": "w-full basis-full mt-2 p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20",
+                                                    "data-unuse-confirm": "{{board.id}}"
+                                                },
+                                                "children": [
+                                                    {
+                                                        "type": "basic",
+                                                        "name": "P",
+                                                        "props": {
+                                                            "className": "text-sm font-semibold"
+                                                        },
+                                                        "text": "$t:g7-light-wiki.settings.unuse_title"
+                                                    },
+                                                    {
+                                                        "type": "basic",
+                                                        "name": "Ul",
+                                                        "props": {
+                                                            "className": "list-disc pl-5 mt-1 space-y-1 text-sm"
+                                                        },
+                                                        "children": [
+                                                            {
+                                                                "type": "basic",
+                                                                "name": "Li",
+                                                                "text": "$t:g7-light-wiki.settings.unuse_body_1"
+                                                            },
+                                                            {
+                                                                "type": "basic",
+                                                                "name": "Li",
+                                                                "text": "$t:g7-light-wiki.settings.unuse_body_2"
+                                                            },
+                                                            {
+                                                                "type": "basic",
+                                                                "name": "Li",
+                                                                "text": "$t:g7-light-wiki.settings.unuse_body_3"
+                                                            },
+                                                            {
+                                                                "type": "basic",
+                                                                "name": "Li",
+                                                                "text": "$t:g7-light-wiki.settings.unuse_body_4"
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "basic",
+                                                        "name": "Div",
+                                                        "props": {
+                                                            "className": "flex justify-end gap-2 mt-2"
+                                                        },
+                                                        "children": [
+                                                            {
+                                                                "type": "basic",
+                                                                "name": "Button",
+                                                                "props": {
+                                                                    "type": "button",
+                                                                    "className": "btn btn-secondary btn-sm"
+                                                                },
+                                                                "actions": [
+                                                                    {
+                                                                        "type": "click",
+                                                                        "handler": "setState",
+                                                                        "params": {
+                                                                            "target": "local",
+                                                                            "unuseConfirm": null
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "text": "$t:g7-light-wiki.settings.unuse_cancel"
+                                                            },
+                                                            {
+                                                                "type": "basic",
+                                                                "name": "Button",
+                                                                "props": {
+                                                                    "type": "button",
+                                                                    "className": "btn btn-sm px-3 py-1.5 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600"
+                                                                },
+                                                                "actions": [
+                                                                    {
+                                                                        "type": "click",
+                                                                        "handler": "setState",
+                                                                        "params": {
+                                                                            "target": "local",
+                                                                            "rows": "{{(_local.rows ?? []).filter(r => r.board_id !== board.id)}}",
+                                                                            "dirty": true,
+                                                                            "unuseConfirm": null
+                                                                        }
+                                                                    }
+                                                                ],
+                                                                "text": "$t:g7-light-wiki.settings.unuse_confirm"
+                                                            }
+                                                        ]
                                                     }
                                                 ]
                                             }
@@ -1459,108 +1547,6 @@
                                 }
                             ],
                             "text": "$t:g7-light-wiki.setup.release_confirm"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "id": "light_wiki_unuse_modal",
-            "type": "composite",
-            "name": "Modal",
-            "props": {
-                "title": "$t:g7-light-wiki.settings.unuse_title",
-                "size": "sm"
-            },
-            "children": [
-                {
-                    "type": "basic",
-                    "name": "P",
-                    "props": {
-                        "className": "text-sm font-semibold"
-                    },
-                    "text": "{{_global.unuseTarget?.name ?? ''}}"
-                },
-                {
-                    "type": "basic",
-                    "name": "Ul",
-                    "props": {
-                        "className": "list-disc pl-5 mt-2 space-y-1 text-sm"
-                    },
-                    "children": [
-                        {
-                            "type": "basic",
-                            "name": "Li",
-                            "text": "$t:g7-light-wiki.settings.unuse_body_1"
-                        },
-                        {
-                            "type": "basic",
-                            "name": "Li",
-                            "text": "$t:g7-light-wiki.settings.unuse_body_2"
-                        },
-                        {
-                            "type": "basic",
-                            "name": "Li",
-                            "text": "$t:g7-light-wiki.settings.unuse_body_3"
-                        },
-                        {
-                            "type": "basic",
-                            "name": "Li",
-                            "text": "$t:g7-light-wiki.settings.unuse_body_4"
-                        }
-                    ]
-                },
-                {
-                    "type": "basic",
-                    "name": "Div",
-                    "props": {
-                        "className": "flex justify-end gap-2 mt-4"
-                    },
-                    "children": [
-                        {
-                            "type": "basic",
-                            "name": "Button",
-                            "props": {
-                                "type": "button",
-                                "className": "px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                            },
-                            "actions": [
-                                {
-                                    "type": "click",
-                                    "handler": "closeModal",
-                                    "target": "light_wiki_unuse_modal"
-                                }
-                            ],
-                            "text": "$t:g7-light-wiki.settings.unuse_cancel"
-                        },
-                        {
-                            "type": "basic",
-                            "name": "Button",
-                            "props": {
-                                "type": "button",
-                                "className": "px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600"
-                            },
-                            "actions": [
-                                {
-                                    "type": "click",
-                                    "handler": "sequence",
-                                    "actions": [
-                                        {
-                                            "handler": "setState",
-                                            "params": {
-                                                "target": "$parent._local",
-                                                "rows": "{{($parent._local.rows ?? []).filter(r => r.board_id !== _global.unuseTarget?.board_id)}}",
-                                                "dirty": true
-                                            }
-                                        },
-                                        {
-                                            "handler": "closeModal",
-                                            "target": "light_wiki_unuse_modal"
-                                        }
-                                    ]
-                                }
-                            ],
-                            "text": "$t:g7-light-wiki.settings.unuse_confirm"
                         }
                     ]
                 }
