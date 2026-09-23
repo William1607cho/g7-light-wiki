@@ -12,6 +12,11 @@ use Plugins\G7\Light\Wiki\Http\Middleware\WikiFormMetaExtension;
 use Plugins\G7\Light\Wiki\Listeners\BoardCleanupListener;
 use Plugins\G7\Light\Wiki\Listeners\PostIndexListener;
 use Plugins\G7\Light\Wiki\Listeners\PostTitleGuardListener;
+use Plugins\G7\Light\Wiki\Support\Setup\BoardProvisioner;
+use Plugins\G7\Light\Wiki\Support\Setup\ManagedBoardList;
+use Plugins\G7\Light\Wiki\Support\Setup\SetupSettings;
+use Plugins\G7\Light\Wiki\Support\Setup\SetupSettingsPatch;
+use Plugins\G7\Light\Wiki\Support\Setup\UninstallGuard;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 
 /**
@@ -19,7 +24,8 @@ use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
  *
  * sirsoft-board 기본형 게시판을 개인 위키로 쓰게 한다. 게시판별로 켜며, 권한 구성에 따라
  * 공개 위키와 비공개 위키를 겸용한다. 코어·sirsoft-board·템플릿은 **파일 한 줄도 고치지
- * 않는다** — 전용 테이블 1개, 응답 미들웨어 3개, 훅 리스너 3개, 플러그인 라우트 3개로만 동작한다.
+ * 않는다** — 전용 테이블 2개, 응답 미들웨어 4개, 훅 리스너 3개, 플러그인 라우트 7개로만 동작한다.
+ * 세트 설치 API 는 게시판·글을 **모듈 서비스로** 만든다(코어·모듈 파일은 여전히 그대로다).
  *
  * ## 하는 일
  *
@@ -44,9 +50,12 @@ use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
  * ## 되돌리기
  *
  * 비활성화하면 미들웨어·훅이 등록 대상에서 빠져 **응답이 설치 전과 같아진다**(본문 DB 는
- * 손대지 않으므로 `[[…]]` 가 다시 글자로 보인다). 색인 표는 남는다 —
- * `plugin:uninstall --delete-data` 에서만 지워지고, 언제든 `light-wiki:rebuild` 로
- * 다시 만들 수 있다.
+ * 손대지 않으므로 `[[…]]` 가 다시 글자로 보인다). 아무것도 지우지 않는다.
+ *
+ * 제거(uninstall)는 세트 설치로 마련한 위키 게시판이 하나라도 남아 있으면 **거부**한다 —
+ * 설정 화면에서 해제한 뒤 제거한다. 게시판·글은 이 플러그인이 어떤 경우에도 지우지 않는다.
+ * 색인 표·설정은 `plugin:uninstall --delete-data` 에서만 코어가 지우고, 언제든
+ * `light-wiki:rebuild` 로 다시 만들 수 있다.
  *
  * ## 본문에 쓰면 안 되는 것
  *
@@ -97,18 +106,32 @@ class Plugin extends AbstractPlugin
                 ],
                 'required' => false,
             ],
+            ManagedBoardList::KEY => [
+                'type' => 'array',
+                'default' => [],
+                'label' => ['ko' => '세트 설치로 마련한 게시판', 'en' => 'Boards Set Up by This Plugin'],
+                'required' => false,
+            ],
+            SetupSettingsPatch::STATE_KEY => [
+                'type' => 'array',
+                'default' => [],
+                'label' => ['ko' => '세트 설치 상태', 'en' => 'Setup State'],
+                'required' => false,
+            ],
         ];
     }
 
     /**
-     * 설정 기본값 — 위키 게시판 없음.
+     * 설정 기본값 — 위키 게시판 없음, 세트 설치 전.
      *
-     * @return array<string, array<int, mixed>>
+     * @return array<string, array<int|string, mixed>>
      */
     public function getConfigValues(): array
     {
         return [
             WikiBoardSettings::KEY => [],
+            ManagedBoardList::KEY => [],
+            SetupSettingsPatch::STATE_KEY => [],
         ];
     }
 
@@ -232,6 +255,22 @@ class Plugin extends AbstractPlugin
         }
 
         return true;
+    }
+
+    /**
+     * 제거 — 세트 설치로 마련한 게시판이 남아 있으면 거부한다. 판정만 하고 아무것도 지우지 않는다.
+     *
+     * 코어는 `--delete-data` 일 때 이 메서드보다 **먼저** 이 플러그인의 표를 지운다. 그래서
+     * 판정은 모듈의 `boards` 표와 설정 파일만 본다(이 플러그인의 표를 조회하지 않는다).
+     */
+    public function uninstall(): bool
+    {
+        $refusal = UninstallGuard::refusal(
+            BoardProvisioner::existingCount(app(SetupSettings::class)->managed()),
+            static fn (int $count): string => (string) __('g7-light-wiki::messages.setup.uninstall_blocked', ['count' => $count]),
+        );
+
+        return $refusal === null ? true : $this->failWith($refusal);
     }
 
     /**

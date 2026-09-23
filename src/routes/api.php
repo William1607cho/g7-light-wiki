@@ -2,7 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Plugins\G7\Light\Wiki\Http\Controllers\Admin\WikiBoardsAdminController;
+use Plugins\G7\Light\Wiki\Http\Controllers\Admin\WikiSetupAdminController;
 use Plugins\G7\Light\Wiki\Http\Controllers\NewDocController;
+use Plugins\G7\Light\Wiki\Support\Setup\SetupPermissions;
 
 /*
  * g7-light-wiki 플러그인 API 라우트
@@ -39,4 +41,23 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     Route::put('wiki-boards', [WikiBoardsAdminController::class, 'update'])
         ->middleware('permission:admin,core.plugins.update')
         ->name('wiki-boards.update');
+
+    // 세트 설치 — 새로 만들기·위키화는 플러그인 설정 권한과 게시판 생성 권한을 **둘 다** 요구한다.
+    Route::get('wiki-setup', [WikiSetupAdminController::class, 'show'])
+        ->middleware(SetupPermissions::readMiddleware())
+        ->name('wiki-setup.show');
+
+    Route::post('wiki-setup/boards', [WikiSetupAdminController::class, 'store'])
+        ->middleware(SetupPermissions::setupMiddleware())
+        ->name('wiki-setup.store');
+
+    Route::post('wiki-setup/boards/{board}/convert', [WikiSetupAdminController::class, 'convert'])
+        ->whereNumber('board')
+        ->middleware(SetupPermissions::setupMiddleware())
+        ->name('wiki-setup.convert');
+
+    Route::delete('wiki-setup/boards/{board}', [WikiSetupAdminController::class, 'release'])
+        ->whereNumber('board')
+        ->middleware(SetupPermissions::releaseMiddleware())
+        ->name('wiki-setup.release');
 });

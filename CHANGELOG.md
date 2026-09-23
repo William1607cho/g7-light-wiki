@@ -54,8 +54,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`boards.posts.form-meta`). It is deliberately not on `form-data`: the template loads that
   response wholesale into its form state and posts it back when saving, so an extra field there
   would travel into the post-save request body.
+- Wiki set-up API (admin, `/api/plugins/g7-light-wiki/admin/wiki-setup`). It can create a new
+  basic board as a wiki, or turn an empty basic board into one, and in the same request writes
+  three seed documents — "대문" (front page, registered as the board's front post), "모든 문서"
+  (index) and "위키 문법 도움말" (syntax help, a placeholder until its text is written). Creating
+  or converting requires both `core.plugins.update` and `sirsoft-board.boards.create`.
+  - The board, its settings, its manager, the seed posts, the document index and the settings
+    file write all happen in one database transaction; the settings file is written last so a
+    failure rolls everything back.
+  - A new board starts from the board module's own `basic_defaults` (the database column
+    defaults differ from them) with view count, replies, comments and admin notifications off,
+    and the saving administrator as its board manager. Converting changes only those four
+    settings and adds the saving administrator as manager only when the board has none.
+  - A board can be converted only when it has no post rows at all — trashed posts, replies and
+    notices included (the `posts_count` column skips trashed posts) — and no categories.
+  - The seed author is chosen per request from users with the `admin` role.
+  - Boards set up this way are recorded in two new settings keys, `managed_boards` and
+    `setup_state`. Boards registered by hand in `wiki_boards` are not recorded and keep working
+    exactly as before.
+- Releasing a wiki (`DELETE …/wiki-setup/boards/{id}`) removes a set-up board from the wiki
+  settings and deletes this plugin's index rows for it. The board and its posts stay; `[[…]]`
+  markup shows as plain text again. Only boards set up by this plugin can be released there.
+- Uninstalling is refused while any board set up by this plugin still exists. Uninstalling never
+  deletes boards or posts; tables and settings are dropped by the core only with `--delete-data`,
+  and the refusal check reads no plugin table, so it is safe when those tables are already gone.
 
 ### Changed
+
+- Saving the wiki board list (`PUT …/admin/wiki-boards`) now refuses to drop a board that was set
+  up by this plugin (422); release it instead, so the set-up record and the wiki list cannot
+  drift apart. Hand-registered wiki boards can be added and removed as before.
 
 - Internal tidy-up, no behaviour change: picking which documents a listing shows moved out of
   `Doc\DocListRenderer` into a new `Doc\DocListTarget`. The renderer now only rewrites the

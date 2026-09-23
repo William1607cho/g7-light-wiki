@@ -9,7 +9,7 @@ use Modules\Sirsoft\Board\Models\Post;
 /**
  * 게시판 **목록 응답**이 쓰는 조회 — 어느 문서를 어떤 순서로 늘어놓을지 정한다.
  *
- * {@see \Plugins\G7\Light\Wiki\Support\Doc\DocListRenderer} 한 곳에서만 부른다.
+ * {@see \Plugins\G7\Light\Wiki\Support\Doc\DocListTarget} 한 곳에서만 부른다.
  * 자리표시 목록({@see WikiDocListQuery})과 갈라 두는 이유는 **거는 조건이 다르기** 때문이다.
  *
  * ## 무엇을 거는가 — 코어 목록과 같은 것

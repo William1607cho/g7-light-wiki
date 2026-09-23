@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Cache;
  * 사실을 두 곳에 적게 된다. 저장소는 코어 기본 캐시({@see Cache::store()})를 그대로 쓴다.
  *
  * **되쓰는 id 도 노출 판정을 다시 받는다** — 그 3초 사이에 글이 지워지거나 권한이 바뀔 수
- * 있다. 판정은 호출부({@see DocListRenderer})가 한다.
+ * 있다. 판정은 호출부({@see DocListTarget})가 한다.
  *
  * 캐시가 없거나 실패해도 목록은 나와야 하므로, 읽기·쓰기 모두 실패를 삼키고 새로 뽑는다.
  */

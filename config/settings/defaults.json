@@ -1,12 +1,16 @@
 {
     "_meta": {
         "version": "0.1.0",
-        "description": "가벼운 위키 환경설정 (위키로 쓸 게시판과 게시판별 대문 글)"
+        "description": "가벼운 위키 환경설정 (위키로 쓸 게시판과 게시판별 대문 글, 세트 설치 기록)"
     },
     "defaults": {
-        "wiki_boards": []
+        "wiki_boards": [],
+        "managed_boards": [],
+        "setup_state": []
     },
     "frontend_schema": {
-        "wiki_boards": { "expose": false }
+        "wiki_boards": { "expose": false },
+        "managed_boards": { "expose": false },
+        "setup_state": { "expose": false }
     }
 }

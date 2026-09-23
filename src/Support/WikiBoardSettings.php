@@ -124,8 +124,10 @@ final class WikiBoardSettings
 
     /**
      * 양의 정수로 읽을 수 있으면 그 값, 아니면 null.
+     *
+     * 세트 설치 기록(`Setup\ManagedBoardList`)도 같은 규칙으로 id 를 읽는다 — 정책을 한 곳에 둔다.
      */
-    private static function toId(mixed $value): ?int
+    public static function toId(mixed $value): ?int
     {
         if (is_int($value)) {
             return $value >= 1 ? $value : null;

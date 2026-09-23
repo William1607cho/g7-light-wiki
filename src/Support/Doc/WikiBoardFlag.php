@@ -26,7 +26,7 @@ namespace Plugins\G7\Light\Wiki\Support\Doc;
  * | 폼 메타 | `{}` — 위키라는 사실 자체가 전부다 |
  *
  * `list_mode` 가 주소의 `sort_by` 가 아니라 **적용된 모드**인 것이 중요하다. 검색어가 있으면
- * 서버가 모드를 무시하므로({@see DocListRenderer::mode()}), 주소만 보고 제목을 고르면
+ * 서버가 모드를 무시하므로({@see DocListTarget::mode()}), 주소만 보고 제목을 고르면
  * `?search=…&sort_by=g7lw-recent` 에서 틀린 제목이 뜬다.
  *
  * **위키가 아닌 게시판에는 아무것도 얹지 않는다.** 그 판정은 미들웨어 첫 줄의

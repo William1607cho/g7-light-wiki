@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Log;
 use Modules\Sirsoft\Board\Models\Board;
 use Modules\Sirsoft\Board\Models\Post;
 use Plugins\G7\Light\Wiki\Http\Requests\UpdateWikiBoardsRequest;
+use Plugins\G7\Light\Wiki\Support\Setup\BoardProvisioner;
+use Plugins\G7\Light\Wiki\Support\Setup\ManagedBoardList;
+use Plugins\G7\Light\Wiki\Support\Setup\SetupSettings;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 
 /**
@@ -38,7 +41,7 @@ class WikiBoardsAdminController extends AdminBaseController
     public function update(UpdateWikiBoardsRequest $request): JsonResponse
     {
         $rows = $request->rows();
-        $errors = $this->validateRows($rows);
+        $errors = $this->validateRows($rows) + $this->keptManagedRows($rows);
 
         if ($errors !== []) {
             return ResponseHelper::error(
@@ -114,6 +117,34 @@ class WikiBoardsAdminController extends AdminBaseController
         }
 
         return $errors;
+    }
+
+    /**
+     * 세트 설치로 마련한 게시판(관리 대상)의 줄은 이 API 로 지울 수 없다 — 해제 API 로만 뺀다.
+     * 여기서 지우면 관리 기록(`managed_boards`)과 실제 위키 목록이 어긋나고, 해제가 하는 색인
+     * 정리도 빠진다. 수동 등록 위키 게시판은 전과 같이 자유롭게 넣고 뺄 수 있다.
+     *
+     * @param  list<array{board_id: int, front_post_id: ?int}>  $rows
+     * @return array<string, list<string>>
+     */
+    private function keptManagedRows(array $rows): array
+    {
+        $kept = array_map(static fn (array $row): int => $row['board_id'], $rows);
+        $managedIds = ManagedBoardList::boardIds(app(SetupSettings::class)->managed());
+        // 게시판 자체가 지워진 관리 줄은 화면에 나오지 않으므로(아래 payload 가 거른다) 따지지 않는다.
+        $existing = array_keys(app(BoardProvisioner::class)->labels($managedIds));
+        $missing = array_diff($existing, $kept);
+
+        if ($missing === []) {
+            return [];
+        }
+
+        return [
+            'wiki_boards' => array_values(array_map(
+                static fn (int $id): string => (string) __('g7-light-wiki::messages.setup.managed_row_removed', ['id' => $id]),
+                $missing,
+            )),
+        ];
     }
 
     /**
