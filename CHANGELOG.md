@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their count constants) and `WikiDocSearchQuery` (the board listing's title search and
   visibility filter). Queries, ordering and call signatures are unchanged.
 
+### Fixed
+
+- The alphabetical index (`[[#색인]]`) no longer starts its first column lower than the others.
+  The gap between consonant groups came from the heading's top margin, and a CSS multi-column
+  layout keeps that margin at the top of the first column while dropping it after a column
+  break. The gap now hangs below each group instead, so every column starts at the top of the
+  index. Group spacing is unchanged (`1.25em` of the body size — the same distance the heading's
+  `1em` used to give at its own larger font size).
 ### Added (1.5단계까지)
 
 - Placeholders `[[#최근작성]]` / `[[#최근작성|N]]` (documents ordered by the core post

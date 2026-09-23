@@ -21,6 +21,27 @@ final class Lists
     private const INDEX_COLUMN_GAP = '1.5rem';
 
     /**
+     * 색인 묶음 — 자음 제목과 그 목록을 한 덩이로 묶고, **묶음 사이 간격을 여기서** 준다.
+     *
+     * 전에는 머리글의 위쪽 여백(`LABEL_STYLE` 의 `margin:1em …`)이 그 간격을 맡았는데,
+     * CSS 다단은 **열 경계 뒤 조각의 위쪽 여백만 버리고 첫 열 맨 위 여백은 남긴다.**
+     * 그래서 1열 첫 머리글만 한 칸 아래에서 시작했다(2026-09-23 실측 22.5px).
+     * 간격을 묶음의 **아래쪽**으로 옮기면 어느 열이든 첫 머리글이 컨테이너 맨 위에서 시작한다.
+     *
+     * 값이 `1.25em` 인 것은 전과 같은 간격을 유지하기 위해서다. 전의 `1em` 은 머리글
+     * (`font-size:1.25em`) 기준이라 본문의 1.25배였고, 이 여백은 묶음(본문 크기) 기준이다.
+     */
+    private const INDEX_GROUP_STYLE = 'break-inside:avoid;margin-bottom:1.25em';
+
+    /**
+     * 색인 머리글 — 공용 {@see WikiHtml::LABEL_STYLE} 에서 **위쪽 여백만 뺀 것**이다.
+     *
+     * 공용 상수를 고치지 않는 이유는 둘러보기 단 제목과 문서 뒤 자동 영역 머리글이 같은
+     * 상수를 쓰기 때문이다. 그 둘은 다단 안에 있지 않아 위쪽 여백이 문제가 되지 않는다.
+     */
+    private const INDEX_LABEL_STYLE = 'font-weight:700;font-size:1.25em;margin:0 0 .25em';
+
+    /**
      * 최근 수정 목록.
      *
      * @param  list<array{post_id: int, title: string}>  $items
@@ -133,8 +154,8 @@ final class Lists
         foreach ($groups as $group) {
             $label = $group['label'] === WikiIndexBuilder::OTHER ? $otherLabel : $group['label'];
 
-            $html .= '<div class="g7lw-index-group" style="break-inside:avoid">'
-                .'<h3 class="g7lw-index-label" style="'.WikiHtml::LABEL_STYLE.'">'
+            $html .= '<div class="g7lw-index-group" style="'.self::INDEX_GROUP_STYLE.'">'
+                .'<h3 class="g7lw-index-label" style="'.self::INDEX_LABEL_STYLE.'">'
                 .WikiHtml::e($label).'</h3><ul>';
 
             foreach ($group['items'] as $item) {
