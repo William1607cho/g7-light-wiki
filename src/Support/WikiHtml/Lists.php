@@ -42,6 +42,22 @@ final class Lists
     private const INDEX_LABEL_STYLE = 'font-weight:700;font-size:1.25em;margin:0 0 .25em';
 
     /**
+     * 둘러보기 블록의 **위쪽** 여백 — 본문 다섯 줄 높이.
+     *
+     * 여백이 없으면 앞 문단이 2단 블록에 붙는다(2026-09-23 실측 0px). 여백을 위에 두는 것은
+     * 이 블록이 대문 본문의 **끝자락**에 오기 때문이다. 아래에 두면 블록과 그 뒤에 이어지는
+     * 색인·목록 사이가 벌어져, 본문에 이어 적은 자리표시들이 서로 멀어진다.
+     *
+     * 값은 본문 한 줄 높이(line-height ÷ font-size = 36px ÷ 18px = 2em)의 5배다.
+     * `lh` 단위를 쓰지 않는 것은 지원 범위가 좁고, 이 블록의 글자 크기가 본문과 같아
+     * `em` 으로 같은 값을 낼 수 있기 때문이다. 좁은 화면에서 1단으로 접혀도 값은 같다.
+     *
+     * 인접 형제의 여백은 합이 아니라 상쇄(더 큰 쪽)라, 앞 요소가 제 아래 여백을 갖고 있어도
+     * 둘을 더한 만큼 벌어지지 않는다.
+     */
+    private const TOUR_MARGIN_TOP = '10em';
+
+    /**
      * 최근 수정 목록.
      *
      * @param  list<array{post_id: int, title: string}>  $items
@@ -107,7 +123,8 @@ final class Lists
         string $randomLabel,
         string $emptyLabel
     ): string {
-        return '<div class="g7lw-tour" style="display:flex;flex-wrap:wrap;gap:1.5rem">'
+        return '<div class="g7lw-tour" style="display:flex;flex-wrap:wrap;gap:1.5rem'
+            .';margin-top:'.self::TOUR_MARGIN_TOP.'">'
             .self::tourColumn(
                 $recentLabel,
                 WikiUrl::boardList($slug, WikiUrl::SORT_RECENT),
