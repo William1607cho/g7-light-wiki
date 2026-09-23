@@ -57,12 +57,45 @@ class SeedDocumentsTest extends TestCase
         $this->assertSame('<p>[[#색인]]</p>', SeedDocuments::body(SeedDocuments::INDEX));
     }
 
-    public function test_문법_문서는_자리만_있다(): void
+    public function test_문법_문서는_절_제목_일곱_개를_갖는다(): void
+    {
+        preg_match_all('#<h2>(.*?)</h2>#u', SeedDocuments::body(SeedDocuments::SYNTAX), $m);
+
+        $this->assertSame([
+            '문서 링크',
+            '분류와 별칭',
+            '연표',
+            '자리표시',
+            '문서 아래에 자동으로 붙는 것',
+            '표기를 글자 그대로 보여 주려면',
+            '표기가 되지 않는 경우',
+        ], $m[1]);
+    }
+
+    public function test_문법_문서의_예시_표기는_모두_코드_서식_안에_있다(): void
     {
         $syntax = SeedDocuments::body(SeedDocuments::SYNTAX);
 
-        $this->assertStringNotContainsString('[[', $syntax);
-        $this->assertStringContainsString('곧 채워집니다', $syntax);
+        // 코드 서식 밖의 `[[` 가 하나라도 있으면 그 표기가 치환되고 분류·별칭·연표·역링크로 등록된다.
+        $outside = preg_replace('#<code>.*?</code>#us', '', $syntax);
+
+        $this->assertGreaterThan(0, substr_count($syntax, '[['));
+        $this->assertSame(0, substr_count($outside, '[['));
+    }
+
+    public function test_문법_문서에는_달러_기호가_없다(): void
+    {
+        // 번역 토큰 모양은 코드 서식 안에서도 방문자·봇 화면이 번역으로 바꾼다 — 어떤 형태로도 넣지 않는다.
+        $this->assertStringNotContainsString('$', SeedDocuments::body(SeedDocuments::SYNTAX));
+    }
+
+    public function test_문법_문서는_정제기가_허용하는_태그만_쓴다(): void
+    {
+        preg_match_all('#</?([a-z0-9]+)#', SeedDocuments::body(SeedDocuments::SYNTAX), $m);
+        $tags = array_values(array_unique($m[1]));
+        sort($tags);
+
+        $this->assertSame(['code', 'h2', 'li', 'p', 'ul'], $tags);
     }
 
     public function test_검색창_폼과_번역_토큰이_없다(): void

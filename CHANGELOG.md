@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - A board can be converted only when it has no post rows at all — trashed posts, replies and
     notices included (the `posts_count` column skips trashed posts) — and no categories.
   - The seed author is chosen per request from users with the `admin` role.
+  - The "위키 문법 도움말" seed now carries the full syntax guide: links, categories and aliases,
+    timeline events, placeholders, the automatic footer, how to show markup literally, and when
+    markup is not recognised. Every example sits inside inline code, so none of it is rendered or
+    registered as a category, alias, event or backlink. Only wikis set up after this change get
+    it; existing syntax documents are left as they are.
   - After the commit the bot (SSR) cache of the three seed documents is cleared. The board
     module renders and caches a post's bot page the moment the post is created, which here is
     before the board is registered as a wiki, so the cached page would show raw `[[…]]` markup
