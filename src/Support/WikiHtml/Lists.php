@@ -42,6 +42,16 @@ final class Lists
     private const INDEX_LABEL_STYLE = 'font-weight:700;font-size:1.25em;margin:0 0 .25em';
 
     /**
+     * 둘러보기 블록의 아래 여백 — 본문 다섯 줄 높이.
+     *
+     * 전에는 여백이 아예 없어 바로 다음 본문 문단이 2단 블록에 붙어 있었다(2026-09-23 실측 0px).
+     * 값은 본문 한 줄 높이(line-height ÷ font-size = 36px ÷ 18px = 2em)의 5배다.
+     * `lh` 단위를 쓰지 않는 것은 지원 범위가 좁고, 이 블록의 글자 크기가 본문과 같아
+     * `em` 으로 같은 값을 낼 수 있기 때문이다. 좁은 화면에서 1단으로 접혀도 값은 같다.
+     */
+    private const TOUR_MARGIN_BOTTOM = '10em';
+
+    /**
      * 최근 수정 목록.
      *
      * @param  list<array{post_id: int, title: string}>  $items
@@ -107,7 +117,8 @@ final class Lists
         string $randomLabel,
         string $emptyLabel
     ): string {
-        return '<div class="g7lw-tour" style="display:flex;flex-wrap:wrap;gap:1.5rem">'
+        return '<div class="g7lw-tour" style="display:flex;flex-wrap:wrap;gap:1.5rem'
+            .';margin-bottom:'.self::TOUR_MARGIN_BOTTOM.'">'
             .self::tourColumn(
                 $recentLabel,
                 WikiUrl::boardList($slug, WikiUrl::SORT_RECENT),

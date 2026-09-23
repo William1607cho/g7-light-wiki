@@ -172,6 +172,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   break. The gap now hangs below each group instead, so every column starts at the top of the
   index. Group spacing is unchanged (`1.25em` of the body size — the same distance the heading's
   `1em` used to give at its own larger font size).
+- `[[#둘러보기]]` now leaves space below its two-column block. It had no bottom margin, so the
+  next body paragraph sat directly against it. The new margin is five body lines (`10em` at the
+  measured 36px line height over 18px body text) and is the same when the block folds to one
+  column on narrow screens.
+
 ### Added (1.5단계까지)
 
 - Placeholders `[[#최근작성]]` / `[[#최근작성|N]]` (documents ordered by the core post
