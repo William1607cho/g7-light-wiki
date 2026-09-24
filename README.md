@@ -6,7 +6,7 @@
 코어·`sirsoft-board`·템플릿은 **파일 한 줄도 고치지 않습니다.** 전용 테이블 1개,
 응답 미들웨어 2개, 훅 리스너 3개, 플러그인 API 3개로만 동작합니다.
 
-- 버전: 0.1.0 (1단계)
+- 버전: 0.1.1 (1단계)
 - 라이선스: MIT
 - 요구: g7 >= 7.0.11, `sirsoft-board` >= 1.1.2
 
@@ -140,7 +140,7 @@ wiki**. Enabled per board; public and private wikis both work, depending on boar
 The core, `sirsoft-board` and the template are **never modified** — the plugin works only
 through its own table, two response middlewares, three hook listeners and three plugin API routes.
 
-- Version: 0.1.0 (phase 1)
+- Version: 0.1.1 (phase 1)
 - License: MIT
 - Requires: g7 >= 7.0.11, `sirsoft-board` >= 1.1.2
 
