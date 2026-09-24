@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Modules\Sirsoft\Board\Http\Resources\PostCollection;
 use Plugins\G7\Light\Wiki\Support\WikiBoardListQuery;
+use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 use Plugins\G7\Light\Wiki\Support\WikiPostLoader;
 
 /**
@@ -77,7 +78,10 @@ final class DocListRenderer
         // 갈아 끼우지 못해도 깃발은 싣는다(위 "갈아 끼우지 않아도" 참조).
         $payload = $this->rebuild($payload, $mode) ?? $payload;
 
-        $data['data'] = WikiBoardFlag::withWiki($payload, WikiBoardFlag::listValue($mode));
+        $data['data'] = WikiBoardFlag::withWiki(
+            $payload,
+            WikiBoardFlag::listValue($mode, WikiBoardSettings::frontPostId($this->boardId))
+        );
 
         // setData 는 이 응답이 쥐고 있는 인코딩 옵션 그대로 되쓴다.
         $response->setData($data);
