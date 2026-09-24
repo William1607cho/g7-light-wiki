@@ -39,7 +39,7 @@ final class BoardProvisioner
      * 빈 게시판을 위키로 바꾼다.
      *
      * 게시판 행을 잠근 뒤 판정한다 — 화면에서 본 "위키화 가능" 과 저장 사이에 누가 글을 써도
-     * 여기서 걸린다. 설정은 위키 고정 칸(네 칸)**만** 보낸다: 권한·다른 설정은 그대로 남는다.
+     * 여기서 걸린다. 설정은 위키화 칸(세 칸, 댓글 제외)**만** 보낸다: 권한·댓글·다른 설정은 그대로 남는다.
      * 게시판 관리자는 건드리지 않되, 0명이면 저장한 관리자를 넣는다(0명이면 나중에 관리자
      * 화면의 게시판 설정 저장이 "관리자 1명 이상" 규칙에 걸린다).
      *
@@ -59,7 +59,7 @@ final class BoardProvisioner
             throw new SetupRejected($reason, ConvertEligibility::status($reason));
         }
 
-        $changes = NewBoardData::WIKI_SETTINGS;
+        $changes = NewBoardData::CONVERT_SETTINGS;
 
         if ($this->managerCount($board) === 0) {
             $changes['board_manager_ids'] = [$managerUuid];

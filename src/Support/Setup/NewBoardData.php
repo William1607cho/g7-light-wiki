@@ -22,11 +22,20 @@ namespace Plugins\G7\Light\Wiki\Support\Setup;
  */
 final class NewBoardData
 {
-    /** 위키 게시판에 고정으로 적용하는 설정 (위키화에도 같은 칸을 쓴다) */
-    public const WIKI_SETTINGS = [
+    /**
+     * 빈 게시판을 위키로 바꿀 때 보내는 설정 — 세 칸.
+     *
+     * 댓글(`use_comment`)은 보내지 않는다. 위키화는 이미 있는 게시판이라, 운영자가 켜 둔 댓글을
+     * 위키로 바꾸면서 끄면 뜻밖의 변경이 된다.
+     */
+    public const CONVERT_SETTINGS = [
         'show_view_count' => false,
         'use_reply' => false,
         'notify_admin_on_post' => false,
+    ];
+
+    /** 새 위키 게시판에 고정으로 적용하는 설정 — 위키화의 세 칸 + 댓글 끔 */
+    public const WIKI_SETTINGS = self::CONVERT_SETTINGS + [
         'use_comment' => false,
     ];
 
