@@ -99,16 +99,22 @@ final class WikiLinkGraphQuery
             return ['items' => [], 'more' => 0];
         }
 
+        $links = self::links($boardId, $scope);
+
+        // 날것 SQL 안의 칸 이름은 문법기로 감싼다 — 표 접두어가 별칭에도 붙어(`… as g7_r`)
+        // `r.post_id` 를 그대로 적으면 없는 별칭이 된다.
+        $grammar = $links->getGrammar();
+
         $found = WikiRefQuery::limited(
-            self::links($boardId, $scope)
+            $links
                 ->whereIn('r.target_norm', $redNames)
                 ->groupBy('r.target_norm')
                 ->orderByDesc('g7lw_count')
                 ->orderBy('r.target_norm')
                 ->select([
                     'r.target_norm',
-                    DB::raw('COUNT(DISTINCT r.post_id) as g7lw_count'),
-                    DB::raw('MIN(r.id) as g7lw_first'),
+                    DB::raw('COUNT(DISTINCT '.$grammar->wrap('r.post_id').') as g7lw_count'),
+                    DB::raw('MIN('.$grammar->wrap('r.id').') as g7lw_first'),
                 ]),
             $limit,
         );
