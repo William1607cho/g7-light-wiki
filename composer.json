@@ -2,7 +2,7 @@
     "name": "plugins/g7-light-wiki",
     "description": "Light wiki add-on for Gnuboard7 — turns a sirsoft-board basic board into a personal wiki without modifying the core, the board module or the template.",
     "type": "library",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "license": "MIT",
     "authors": [
         {

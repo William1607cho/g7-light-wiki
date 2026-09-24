@@ -6,7 +6,7 @@
 코어·`sirsoft-board`·템플릿은 **파일 한 줄도 고치지 않습니다.** 전용 테이블 1개,
 응답 미들웨어 2개, 훅 리스너 3개, 플러그인 API 3개로만 동작합니다.
 
-- 버전: 0.1.1 (1단계)
+- 버전: 0.2.0 (1단계)
 - 라이선스: MIT
 - 요구: g7 >= 7.0.11, `sirsoft-board` >= 1.1.2
 
@@ -17,7 +17,7 @@
 | 제목 = 문서 이름 | 위키 게시판에서 정규화 제목이 같은 글 두 개를 막습니다(422). |
 | 문서 링크 | 본문의 `[[문서명]]`·`[[문서명\|표시 글자]]` 를 그 문서로 가는 링크로 바꿉니다. |
 | 빨간 링크 | 없는 문서는 빨간 링크입니다. 누르면 **그 제목이 채워진** 작성 화면이 열립니다. 글쓰기 권한이 없으면 링크 없이 빨간 글자만 보입니다. |
-| 자리표시 | 위키 게시판의 문서에서 `[[#최근수정]]`·`[[#최근작성]]`·`[[#랜덤]]`·`[[#색인]]`·`[[#둘러보기]]` 가 채워집니다(각각 `\|N` 으로 개수 지정). |
+| 자리표시 | 위키 게시판의 문서에서 `[[#최근수정]]`·`[[#최근작성]]`·`[[#랜덤]]`·`[[#색인]]`·`[[#둘러보기]]` 가 채워집니다(각각 `\|N` 으로 개수 지정). 위키 관리용으로 `[[#분류색인]]`·`[[#외톨이]]`·`[[#필요한문서]]` 도 있습니다(0.2.0). |
 | 문서 목록 | 위키 게시판의 글 목록이 **대문 글 1건**만 보여 줍니다. 검색하면 **제목이 걸리는 문서** 목록이 됩니다. |
 
 ## 쓰는 법
@@ -47,6 +47,9 @@
 [[#색인]]          가나다(초성)·A~Z·0~9·기타 색인
 [[#둘러보기]]      왼쪽 "최근 수정" · 오른쪽 "랜덤" 2단 블록 (각 5개)
 [[#둘러보기|3]]    각 단의 개수 지정
+[[#분류색인]]      모든 분류를 첫 글자로 묶은 목록 (분류 문서가 없는 분류는 빨간 링크, |N 은 색인과 같은 열 수)
+[[#외톨이]]        다른 문서가 링크하지 않는 문서 (대문·분류 문서 제외, 별칭 링크도 연결로 침)
+[[#필요한문서]]    아직 없는데 링크가 걸린 제목과 링크한 문서 수, 많은 순
 ```
 
 **최근수정과 최근작성은 다릅니다.** 최근수정은 마지막으로 고친 순서, 최근작성은 글을 처음
@@ -57,6 +60,19 @@
 
 목록에서 빠지는 문서: 삭제된 글, 게시 상태가 아닌 글, 비밀글, 답글, 대문 글,
 그리고 **자리표시가 실린 그 문서 자신**입니다.
+
+`[[#외톨이]]`·`[[#필요한문서]]` 는 **보는 사람이 읽을 수 있는 문서**의 링크만 셉니다. 비밀글을
+읽을 수 있는 사람(작성자, 게시판 비밀글 읽기 권한·게시판 관리자)에게는 비밀글도 들어가므로,
+로그인 여부에 따라 결과가 다를 수 있습니다. 검색엔진용 화면은 비로그인 기준입니다.
+
+### 세트 설치와 위키화
+
+- 관리자 화면에서 위키 게시판을 새로 만들거나 빈 게시판을 위키로 바꾸면 시드 문서 6건이
+  함께 만들어집니다: 모든 문서·분류 색인·외톨이 문서·필요한 문서·위키 문법 도움말·대문.
+  대문 맨 아래에 앞의 다섯 문서로 가는 바로가기가 있습니다.
+- **이미 만든 위키 게시판에는 새 시드(분류 색인·외톨이 문서·필요한 문서)가 생기지 않습니다.**
+  필요하면 문서를 직접 만들고 본문에 `[[#분류색인]]` 처럼 적으세요. 기존 도움말 문서도 바뀌지 않습니다.
+- 빈 게시판을 위키로 바꿀 때 **댓글 설정은 바꾸지 않습니다**(0.2.0부터. 새로 만드는 게시판은 댓글 끔).
 
 `[[#둘러보기]]` 의 2단 배치는 인라인 `style` 로 줍니다(이 플러그인 전용 CSS 가 템플릿 빌드에
 없기 때문입니다). 좁은 화면에서는 자동으로 1단이 됩니다.
@@ -140,7 +156,7 @@ wiki**. Enabled per board; public and private wikis both work, depending on boar
 The core, `sirsoft-board` and the template are **never modified** — the plugin works only
 through its own table, two response middlewares, three hook listeners and three plugin API routes.
 
-- Version: 0.1.1 (phase 1)
+- Version: 0.2.0 (phase 1)
 - License: MIT
 - Requires: g7 >= 7.0.11, `sirsoft-board` >= 1.1.2
 
@@ -152,6 +168,8 @@ through its own table, two response middlewares, three hook listeners and three 
 | Document links | `[[Document]]` and `[[Document\|label]]` in a post body become links. |
 | Red links | Missing documents show as red links that open the write form **with the title filled in**. Without write permission they are plain red text. |
 | Placeholders | `[[#최근수정]]`, `[[#최근작성]]`, `[[#랜덤]]`, `[[#색인]]` and `[[#둘러보기]]` (each accepting `\|N`) are filled in on **any HTML-mode document** of a wiki board. The random target is picked **while rendering that document**, so reloading it points somewhere else. |
+| Maintenance lists (0.2.0) | `[[#분류색인]]` lists every category grouped by first letter (categories without a category page show as red links; `\|N` sets columns like the index). `[[#외톨이]]` lists documents no other document links to (front page and category pages excluded; alias links count). `[[#필요한문서]]` lists missing titles that are linked, with the number of linking documents, most first. The last two count only links in documents **the viewer can read**, so results may differ when signed in; the search-engine view is the signed-out one. |
+| Set-up and conversion | Creating a wiki board, or converting an empty board, from the admin screen creates six seed documents: index, category index, orphaned documents, wanted documents, syntax help and the front page, which ends with links to the other five. **Wikis set up before 0.2.0 do not get the new seed documents** — create them yourself if you want them. Since 0.2.0, converting an empty board **leaves its comment setting unchanged**; new boards still have comments off. |
 
 ## Usage
 

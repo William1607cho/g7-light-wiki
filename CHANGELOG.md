@@ -5,6 +5,42 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - 2026-09-24
+
+### Added
+
+- Three maintenance placeholders, usable in any HTML-mode document of a wiki board:
+  - `[[#외톨이]]` — orphaned documents: documents that no other document links to. The front
+    page, category pages (titles starting with `분류:`) and the document being shown are left
+    out. Links made through an alias count; category membership, alias declarations, timeline
+    entries and links drawn by placeholders do not.
+  - `[[#필요한문서]]` — wanted documents: titles that would render as red links, each followed
+    by the number of documents linking to it `(N)`, most linked first. An item looks like any
+    red link — a link to the write form for readers who can write, red text otherwise.
+  - `[[#분류색인]]` / `[[#분류색인|N]]` — every category (from `[[분류:…]]` markup and from
+    `분류:` pages) grouped by first letter, with the same layout and column rule as
+    `[[#색인]]`. A category without a category page shows as a red link whose new document
+    title is `분류:<name>`.
+- The orphaned and wanted lists count only links in documents **the viewer can read**. Secret
+  posts are decided by the board module's own `SecretContentGate::canView()`; a password view
+  token is not used. Results may therefore differ when signed in; the search-engine view is the
+  signed-out one. The category index and all existing lists (backlinks, category members,
+  timeline, recent, random, index) keep leaving secret posts out.
+- The set-up now creates six seed documents — index, category index, orphaned documents, wanted
+  documents, syntax help and the front page — and the front page ends with links to the other
+  five. The syntax help lists the three new placeholders. **Wikis set up earlier do not get the
+  new seed documents**; create them yourself if you want them.
+
+### Changed
+
+- Converting an empty board into a wiki no longer turns its comments off (`use_comment` is no
+  longer sent). Boards created by the set-up still have comments off.
+
+### Fixed
+
+- Category member lists on a document failed with an SQL error when a category had more than
+  100 members (the count used a raw table alias that the table prefix renamed).
+
 ## [v0.1.1] - 2026-09-24
 
 ### Added
