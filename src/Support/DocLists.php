@@ -2,6 +2,7 @@
 
 namespace Plugins\G7\Light\Wiki\Support;
 
+use Plugins\G7\Light\Wiki\Support\Doc\CategoryIndex;
 use Plugins\G7\Light\Wiki\Support\Doc\LinkGraph;
 use Plugins\G7\Light\Wiki\Support\Doc\SecretScope;
 use Plugins\G7\Light\Wiki\Support\Placeholders\DocGraphSource;
@@ -43,6 +44,9 @@ final class DocLists implements DocGraphSource, DocListSource
     private array $timelineMemo = [];
 
     private ?LinkGraph $graphMemo = null;
+
+    /** @var list<array{title: string, title_norm: string, post_id: int|null}>|null */
+    private ?array $categoryIndexMemo = null;
 
     /**
      * @param  list<int>  $exclude  후보에서 뺄 글 ID (대문 글 + 지금 그리는 그 문서 자신)
@@ -115,6 +119,11 @@ final class DocLists implements DocGraphSource, DocListSource
             ], $found['items']),
             'more' => $found['more'],
         ];
+    }
+
+    public function categoryIndex(): array
+    {
+        return $this->categoryIndexMemo ??= CategoryIndex::build($this->boardId);
     }
 
     private function graph(): LinkGraph

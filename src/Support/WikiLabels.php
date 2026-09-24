@@ -33,6 +33,7 @@ final class WikiLabels
         'front.tour_random',
         'front.orphan_empty',
         'front.wanted_empty',
+        'front.category_index_empty',
         'doc.categories',
         'doc.category_members',
         'doc.aliases',
@@ -113,6 +114,12 @@ final class WikiLabels
     public function wantedEmpty(): string
     {
         return $this->get('front.wanted_empty');
+    }
+
+    /** 분류가 하나도 없을 때 */
+    public function categoryIndexEmpty(): string
+    {
+        return $this->get('front.category_index_empty');
     }
 
     // ── 자동 영역 문구 ──────────────────────────────────────────────────────

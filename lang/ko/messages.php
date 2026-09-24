@@ -15,6 +15,7 @@ return [
         'tour_random' => '랜덤 문서',
         'orphan_empty' => '외톨이 문서가 없습니다.',
         'wanted_empty' => '필요한 문서가 없습니다.',
+        'category_index_empty' => '아직 분류가 없습니다.',
     ],
     'doc' => [
         'categories' => '분류',

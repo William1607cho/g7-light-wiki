@@ -71,6 +71,9 @@ final class WikiMarkupParser
     /** 필요한 문서 목록 `[[#필요한문서]]` — 링크는 있는데 아직 없는 제목 */
     public const PLACEHOLDER_WANTED = '필요한문서';
 
+    /** 분류 색인 `[[#분류색인]]`·`[[#분류색인|N]]` — 모든 분류를 첫 글자로 묶은 목록 */
+    public const PLACEHOLDER_CATEGORY_INDEX = '분류색인';
+
     /** 접두어 표기 — `접두어` => `kind` */
     private const PREFIX_KINDS = [
         '분류:' => self::KIND_CATEGORY,
@@ -89,6 +92,7 @@ final class WikiMarkupParser
         self::PLACEHOLDER_TIMELINE,
         self::PLACEHOLDER_ORPHAN,
         self::PLACEHOLDER_WANTED,
+        self::PLACEHOLDER_CATEGORY_INDEX,
     ];
 
     /**

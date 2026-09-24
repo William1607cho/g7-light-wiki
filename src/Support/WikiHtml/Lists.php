@@ -151,21 +151,29 @@ final class Lists
      * 묶음마다 `break-inside:avoid` 를 줘서 자음 제목과 그 목록이 열 경계에서 갈리지 않게 한다.
      * `style` 속성은 봇 SSR 정제기와 방문자 화면 DOMPurify 양쪽이 남긴다(2026-09-22 코드 확인).
      *
-     * @param  list<array{label: string, items: list<array{id: int, title: string, title_norm: string}>}>  $groups
+     * `[[#분류색인]]` 도 이 조립을 쓴다 — 바깥 class 와 항목 HTML 만 바꿔 넘긴다(항목이 문서가
+     * 아니라 분류라 빨간 링크일 수 있다). 넘기지 않으면 색인 그대로다.
+     *
+     * @param  list<array{label: string, items: list<array<string, mixed>>}>  $groups
      * @param  int  $maxColumns  넓은 화면에서의 최대 열 수 (부르는 쪽이 1~4 로 걸러 넘긴다)
+     * @param  (callable(array<string, mixed>): string)|null  $itemHtml  항목 하나의 HTML (없으면 문서 링크)
      */
     public static function index(
         string $slug,
         array $groups,
         string $otherLabel,
         string $emptyLabel,
-        int $maxColumns
+        int $maxColumns,
+        ?callable $itemHtml = null,
+        string $class = 'g7lw-index'
     ): string {
         if ($groups === []) {
-            return WikiHtml::emptyNotice('g7lw-index', $emptyLabel);
+            return WikiHtml::emptyNotice($class, $emptyLabel);
         }
 
-        $html = '<div class="g7lw-index" style="columns:'.self::INDEX_COLUMN_WIDTH.' '.$maxColumns
+        $itemHtml ??= static fn (array $item): string => WikiHtml::link(WikiUrl::post($slug, (int) $item['id']), (string) $item['title']);
+
+        $html = '<div class="'.$class.'" style="columns:'.self::INDEX_COLUMN_WIDTH.' '.$maxColumns
             .';column-gap:'.self::INDEX_COLUMN_GAP.'">';
 
         foreach ($groups as $group) {
@@ -176,7 +184,7 @@ final class Lists
                 .WikiHtml::e($label).'</h3><ul>';
 
             foreach ($group['items'] as $item) {
-                $html .= '<li>'.WikiHtml::link(WikiUrl::post($slug, (int) $item['id']), (string) $item['title']).'</li>';
+                $html .= '<li>'.$itemHtml($item).'</li>';
             }
 
             $html .= '</ul></div>';

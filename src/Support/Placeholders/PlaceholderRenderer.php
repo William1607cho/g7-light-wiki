@@ -36,9 +36,9 @@ final class PlaceholderRenderer
     /**
      * 이 문서에서 쓸 디스패처를 만든다 — 기능별 렌더러를 전부 등록한다.
      *
-     * 외톨이·필요한 문서는 공급자가 {@see DocGraphSource} 도 구현할 때만 등록한다(아니면 그 이름은
-     * 맡은 렌더러가 없어 원문 그대로다). 필요한 문서는 본문 빨간 링크와 같은 모양이라 게시판 ID 와
-     * 쓰기 권한을 더 받는다 — 뒤에 붙인 선택 인자라 기존 호출은 그대로 선다.
+     * 외톨이·필요한 문서·분류색인은 공급자가 {@see DocGraphSource} 도 구현할 때만 등록한다(아니면
+     * 그 이름은 맡은 렌더러가 없어 원문 그대로다). 필요한 문서·분류색인은 본문 빨간 링크와 같은
+     * 모양이라 게시판 ID 와 쓰기 권한을 더 받는다 — 뒤에 붙인 선택 인자라 기존 호출은 그대로 선다.
      */
     public static function forDoc(
         string $slug,
@@ -60,6 +60,7 @@ final class PlaceholderRenderer
         if ($source instanceof DocGraphSource) {
             $renderers[] = new OrphanRenderer($slug, $source, $labels);
             $renderers[] = new WantedRenderer($boardId, $canWrite, $source, $labels);
+            $renderers[] = new CategoryIndexRenderer($slug, $boardId, $canWrite, $source, $labels);
         }
 
         return new self($canRead, ...$renderers);

@@ -51,8 +51,10 @@ final class IndexRenderer implements Renderer
      * "너무 큰 수" 와 "받아들이는 최대값" 을 가른다. 그래야 `|9` 가 4 열이 아니라
      * 기본값 3 열이 된다(개수를 받는 `[[#최근수정|999]]` 와 달리, 열 수는 잘라서 주면
      * 사용자가 적은 뜻과 멀어진다).
+     *
+     * `[[#분류색인|N]]` 도 같은 규칙이라 공개한다({@see CategoryIndexRenderer}).
      */
-    private static function columns(mixed $argument): int
+    public static function columns(mixed $argument): int
     {
         $requested = Limit::optional($argument, self::COLUMNS_MAX + 1);
 

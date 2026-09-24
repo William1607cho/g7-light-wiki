@@ -2,6 +2,7 @@
 
 namespace Plugins\G7\Light\Wiki\Support\WikiHtml;
 
+use Plugins\G7\Light\Wiki\Support\WikiCategory;
 use Plugins\G7\Light\Wiki\Support\WikiHtml;
 use Plugins\G7\Light\Wiki\Support\WikiUrl;
 
@@ -20,6 +21,28 @@ final class LinkLists
     public const ORPHAN_CLASS = 'g7lw-orphan-list';
 
     public const WANTED_CLASS = 'g7lw-wanted-list';
+
+    /** `[[#분류색인]]` 의 바깥 class — 모양은 색인 조립({@see Lists::index()})이 그린다 */
+    public const CATEGORY_INDEX_CLASS = 'g7lw-category-index';
+
+    /**
+     * 분류 색인의 항목 하나 — 분류 문서가 있으면 파란 링크, 없으면 본문 빨간 링크와 같은 모양.
+     * 빨간 링크의 새 문서 제목은 `분류:<이름>` 이다.
+     *
+     * @param  array{title: string, post_id: int|null}  $item
+     */
+    public static function category(string $slug, int $boardId, bool $canWrite, array $item): string
+    {
+        $name = (string) $item['title'];
+
+        if (($item['post_id'] ?? null) !== null) {
+            return WikiHtml::link(WikiUrl::post($slug, (int) $item['post_id']), $name);
+        }
+
+        return $canWrite
+            ? WikiHtml::newLink(WikiUrl::newDoc($boardId, WikiCategory::title($name)), $name)
+            : WikiHtml::newText($name);
+    }
 
     /**
      * @param  list<array{post_id: int, title: string}>  $items

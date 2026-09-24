@@ -15,6 +15,7 @@ return [
         'tour_random' => 'Random documents',
         'orphan_empty' => 'No orphaned documents.',
         'wanted_empty' => 'No wanted documents.',
+        'category_index_empty' => 'No categories yet.',
     ],
     'doc' => [
         'categories' => 'Categories',
