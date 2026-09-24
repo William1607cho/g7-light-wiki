@@ -100,6 +100,33 @@ final class SeedDocuments
 HTML;
 
     /**
+     * "대문" 본문 — 맨 아래 바로가기 줄을 뺀 앞부분.
+     *
+     * 운영자가 처음 할 일을 안내하고, 읽은 뒤 지우도록 적어 둔다. 예시 표기는 문법 문서와 같이
+     * **모두 `<code>` 안**에 있어 치환·추출되지 않는다. 바로가기 줄의 문서 링크는
+     * {@see TITLES} 에서 만들어야 하므로 {@see body()} 가 뒤에 붙인다. 번역 토큰 모양은 넣지 않는다.
+     */
+    private const FRONT_BODY = <<<'HTML'
+<p>이 위키에 오신 것을 환영합니다.<br>이 자리에 위키 소개를 적어 주세요. 무엇을 모으는 곳인지, 누구를 위한 곳인지 한두 문장이면 충분합니다.</p>
+<p>[[#둘러보기]]</p>
+<h3>처음 시작하기 (운영자용 — 읽고 나서 이 부분은 지워도 됩니다)</h3>
+<ol>
+<li>이 대문을 고쳐 위 소개 문장을 바꿉니다. 대문은 위키의 첫 화면입니다.</li>
+<li>첫 문서를 만듭니다. 본문에 <code>[[문서 제목]]</code>처럼 적으면 빨간 링크가 생기고, 누르면 그 제목이 채워진 작성 화면으로 갑니다. 목록의 글쓰기 버튼으로 바로 써도 됩니다.</li>
+<li>문서를 분류로 묶습니다. 문서 본문에 <code>[[분류:인물]]</code>을 넣고, 제목이 "분류:인물"인 문서를 만들면 소속 문서 목록이 자동으로 붙습니다. 분류 문서에도 상위 분류를 넣어 여러 단계로 이어 갈 수 있습니다.</li>
+<li>대문에 주요 분류의 목록을 두면 방문자가 길을 찾기 쉽습니다. <code>[[#분류|인물]]</code>처럼 적으면 그 자리에 목록이 그려집니다.</li>
+<li>문서는 HTML 모드로 써야 표기가 동작합니다.</li>
+</ol>
+<h3>알아 두면 좋은 것</h3>
+<ul>
+<li>같은 대상을 다른 이름으로도 찾게 하려면 <code>[[별칭:다른이름]]</code>을 씁니다.</li>
+<li>날짜가 있는 사건은 <code>[[연표:2024.3|설명]]</code>으로 적고 <code>[[#연표]]</code>로 모아 봅니다.</li>
+<li>이 위키는 한 사람이 편집하는 용도입니다. 수정 이력과 공동 편집 기능은 없습니다.</li>
+</ul>
+
+HTML;
+
+    /**
      * 만들 순서대로 시드 정의.
      *
      * @return list<array{key: string, title: string, content: string, content_mode: string}>
@@ -128,8 +155,7 @@ HTML;
         return match ($key) {
             self::INDEX => '<p>[[#색인]]</p>',
             self::SYNTAX => self::SYNTAX_BODY,
-            self::FRONT => '<p>이 위키에 오신 것을 환영합니다.</p>'
-                .'<p>[[#둘러보기]]</p>'
+            self::FRONT => self::FRONT_BODY
                 .'<p>[['.self::TITLES[self::INDEX].']] · [['.self::TITLES[self::SYNTAX].']]</p>',
             default => throw new \InvalidArgumentException("알 수 없는 시드: {$key}"),
         };
