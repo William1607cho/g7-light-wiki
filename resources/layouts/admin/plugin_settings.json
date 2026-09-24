@@ -756,7 +756,7 @@
                                                                                 "name": "A",
                                                                                 "if": "{{mb.exists && mb.slug}}",
                                                                                 "props": {
-                                                                                    "href": "{{'/board/' + mb.slug}}",
+                                                                                    "href": "{{mb.front_post_id ? '/board/' + mb.slug + '/' + mb.front_post_id : '/board/' + mb.slug}}",
                                                                                     "target": "_blank",
                                                                                     "className": "text-blue-600 dark:text-blue-400 hover:underline"
                                                                                 },

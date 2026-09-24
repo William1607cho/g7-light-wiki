@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of "마련" (prepare), matching the tab title and the "new board" option that already said
   "만들기". English strings are unchanged.
 - `scripts/` is excluded from release archives, alongside `tests/`.
+- In the set-up screen's list of wiki boards, a board's name now links to its front page
+  (`/board/{slug}/{front_post_id}`) instead of the board list. The value is the
+  `front_post_id` the settings response already carried for each row; when it is `null` the
+  link stays on the board list. Whether the front page post still exists is not checked, the
+  same as the template's "Go to Front Page" button on a document page.
 - The Korean label of the `managed_boards` setting reads "세트 설치로 만든 게시판" instead of
   "…마련한 게시판", the last "마련" left in text the plugin can show.
 
