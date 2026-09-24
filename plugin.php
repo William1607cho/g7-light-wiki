@@ -109,7 +109,7 @@ class Plugin extends AbstractPlugin
             ManagedBoardList::KEY => [
                 'type' => 'array',
                 'default' => [],
-                'label' => ['ko' => '세트 설치로 마련한 게시판', 'en' => 'Boards Set Up by This Plugin'],
+                'label' => ['ko' => '세트 설치로 만든 게시판', 'en' => 'Boards Set Up by This Plugin'],
                 'required' => false,
             ],
             SetupSettingsPatch::STATE_KEY => [

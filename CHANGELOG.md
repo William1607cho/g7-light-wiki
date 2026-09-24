@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of "마련" (prepare), matching the tab title and the "new board" option that already said
   "만들기". English strings are unchanged.
 - `scripts/` is excluded from release archives, alongside `tests/`.
+- The Korean label of the `managed_boards` setting reads "세트 설치로 만든 게시판" instead of
+  "…마련한 게시판", the last "마련" left in text the plugin can show.
 
 ## [v0.1.0] - 2026-09-23
 
