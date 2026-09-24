@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- The wiki board list response, title search results included, now carries
+  `board.wiki.front_post_id` — the same name and shape the document page response already uses,
+  `null` when no front page is set. `list_mode` is unchanged, and boards that are not wikis get
+  no `board.wiki` at all, as before. This lets the template draw a "go to front page" button on
+  the list screen from the same value as the one on the document page.
+
+### Changed
+
+- The front page created by the set-up now opens with a place for the wiki's introduction and
+  a short guide for the operator — creating the first document, grouping documents into
+  categories, listing a category on the front page, aliases and the timeline — which can be
+  deleted once read. Every example is inside `<code>`, so nothing in it is replaced on screen or
+  extracted on save. The browse placeholder and the closing links to the index and syntax help
+  documents stay. Front pages that already exist are not touched.
+- The Korean wording of the set-up screen and its release error uses "만들기" (create) in place
+  of "마련" (prepare), matching the tab title and the "new board" option that already said
+  "만들기". English strings are unchanged.
+- `scripts/` is excluded from release archives, alongside `tests/`.
+
 ## [v0.1.0] - 2026-09-23
 
 ### Added
