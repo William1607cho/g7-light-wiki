@@ -167,10 +167,14 @@ final class WikiRefQuery
     {
         $totals = [];
 
-        $rows = self::visible($boardId, WikiRef::KIND_CATEGORY)
+        $query = self::visible($boardId, WikiRef::KIND_CATEGORY);
+
+        // 날것 SQL 안의 칸 이름은 문법기로 감싼다 — 표 접두어가 별칭에도 붙어(`… as g7_d`)
+        // `d.post_id` 를 그대로 적으면 없는 별칭이 된다.
+        $rows = $query
             ->whereIn('r.target_norm', $normalized)
             ->groupBy('r.target_norm')
-            ->select(['r.target_norm', DB::raw('COUNT(DISTINCT d.post_id) as g7lw_count')])
+            ->select(['r.target_norm', DB::raw('COUNT(DISTINCT '.$query->getGrammar()->wrap('d.post_id').') as g7lw_count')])
             ->get();
 
         foreach ($rows as $row) {
