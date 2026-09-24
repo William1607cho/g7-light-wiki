@@ -34,8 +34,8 @@ return [
         'front_post_mismatch' => 'Post :id does not belong to this board.',
     ],
     'setup' => [
-        'created' => 'The wiki board was created with its front page, index and syntax help documents.',
-        'converted' => 'The board was turned into a wiki with its front page, index and syntax help documents.',
+        'created' => 'The wiki board was created with its front page, index, category index, orphaned documents, wanted documents and syntax help documents.',
+        'converted' => 'The board was turned into a wiki with its front page, index, category index, orphaned documents, wanted documents and syntax help documents.',
         'released' => 'The wiki was released. The board and its posts remain, and [[link]] markup in documents now shows as plain text. The search engine view may show the previous page for up to two hours.',
         'author_invalid' => 'User :id does not have the administrator role and cannot author the seed documents.',
         'board_missing' => 'Board :id was not found.',

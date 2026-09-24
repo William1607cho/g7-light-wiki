@@ -26,7 +26,7 @@ final class SeedWriter
     public function __construct(private readonly PostService $posts) {}
 
     /**
-     * 시드 3건을 만든다.
+     * 시드 6건을 만든다.
      *
      * @param  int  $authorId  작성자 (저장 직전에 후보인지 확인한 사용자)
      * @param  string  $ipAddress  요청 IP (`board_posts.ip_address` 는 NOT NULL)

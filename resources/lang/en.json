@@ -33,7 +33,7 @@
         "tab": "Create a Wiki Board",
         "tab_boards": "Registered Manually",
         "needs_setup_title": "Please finish setting up",
-        "needs_setup_body": "No wiki board has been set up by this plugin yet. Create a new board below, or pick an empty board to turn into a wiki; the front page, index and syntax help documents are created along with it.",
+        "needs_setup_body": "No wiki board has been set up by this plugin yet. Create a new board below, or pick an empty board to turn into a wiki; the front page, index, category index, orphaned documents, wanted documents and syntax help documents are created along with it.",
         "card_title": "Set up a wiki board",
         "mode_label": "How to set up",
         "mode_new": "Create a new board",

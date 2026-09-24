@@ -14,7 +14,14 @@ class SeedDocumentsTest extends TestCase
     {
         $keys = array_column(SeedDocuments::all(), 'key');
 
-        $this->assertSame([SeedDocuments::INDEX, SeedDocuments::SYNTAX, SeedDocuments::FRONT], $keys);
+        $this->assertSame([
+            SeedDocuments::INDEX,
+            SeedDocuments::CATEGORY_INDEX,
+            SeedDocuments::ORPHAN,
+            SeedDocuments::WANTED,
+            SeedDocuments::SYNTAX,
+            SeedDocuments::FRONT,
+        ], $keys);
     }
 
     public function test_제목(): void

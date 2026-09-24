@@ -119,6 +119,9 @@ final class ManagedBoardList
             'origin' => $origin,
             'seed_post_ids' => [
                 SeedDocuments::INDEX => WikiBoardSettings::toId($seeds[SeedDocuments::INDEX] ?? null),
+                SeedDocuments::CATEGORY_INDEX => WikiBoardSettings::toId($seeds[SeedDocuments::CATEGORY_INDEX] ?? null),
+                SeedDocuments::ORPHAN => WikiBoardSettings::toId($seeds[SeedDocuments::ORPHAN] ?? null),
+                SeedDocuments::WANTED => WikiBoardSettings::toId($seeds[SeedDocuments::WANTED] ?? null),
                 SeedDocuments::SYNTAX => WikiBoardSettings::toId($seeds[SeedDocuments::SYNTAX] ?? null),
                 SeedDocuments::FRONT => WikiBoardSettings::toId($seeds[SeedDocuments::FRONT] ?? null),
             ],

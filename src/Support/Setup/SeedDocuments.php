@@ -3,12 +3,12 @@
 namespace Plugins\G7\Light\Wiki\Support\Setup;
 
 /**
- * 세트 설치가 만드는 시드 문서 3건 — 순수 정의 (DB·HTTP·설정 접근 없음).
+ * 세트 설치가 만드는 시드 문서 6건 — 순수 정의 (DB·HTTP·설정 접근 없음).
  *
  * ## 순서
  *
- * 모든 문서 → 위키 문법 도움말 → 대문. 대문이 앞의 둘을 `[[…]]` 로 가리키므로 마지막에
- * 만든다. 링크 색(있음·없음)은 그릴 때 정해져 순서가 틀려도 결과는 같지만, 대문이 처음
+ * 모든 문서 → 분류 색인 → 외톨이 문서 → 필요한 문서 → 위키 문법 도움말 → 대문. 대문이 앞의
+ * 다섯을 `[[…]]` 로 가리키므로 마지막에 만든다. 바로가기 줄도 이 순서다. 링크 색(있음·없음)은 그릴 때 정해져 순서가 틀려도 결과는 같지만, 대문이 처음
  * 그려지는 순간 대상 문서가 이미 있으면 봇 캐시에 빨간 링크가 박힐 틈이 없다.
  *
  * ## 본문 규칙
@@ -24,13 +24,22 @@ final class SeedDocuments
 {
     public const INDEX = 'index';
 
+    public const CATEGORY_INDEX = 'category_index';
+
+    public const ORPHAN = 'orphan';
+
+    public const WANTED = 'wanted';
+
     public const SYNTAX = 'syntax';
 
     public const FRONT = 'front';
 
-    /** 문서 제목 — 대문 본문의 링크와 글자가 같아야 한다 */
+    /** 문서 제목 — 대문 본문의 링크와 글자가 같아야 한다. 이 순서로 만들고 바로가기 줄도 이 순서다. */
     public const TITLES = [
         self::INDEX => '모든 문서',
+        self::CATEGORY_INDEX => '분류 색인',
+        self::ORPHAN => '외톨이 문서',
+        self::WANTED => '필요한 문서',
         self::SYNTAX => '위키 문법 도움말',
         self::FRONT => '대문',
     ];
@@ -73,9 +82,12 @@ final class SeedDocuments
 <li><code>[[#색인]]</code> — 첫 글자로 묶은 전체 문서 목록입니다. 세로줄 뒤 숫자로 열 수를 정하며 기본 3, 1에서 4까지입니다. 좁은 화면에서는 열이 줄어듭니다.</li>
 <li><code>[[#둘러보기]]</code> — 왼쪽에 최근 수정, 오른쪽에 무작위 문서를 두 단으로 보여 줍니다. 각 단 제목을 누르면 목록 화면으로 갑니다. 단마다 기본 5개.</li>
 <li><code>[[#분류|인물]]</code> — 그 분류에 속한 문서 목록입니다. 분류 이름을 반드시 적어야 합니다.</li>
+<li><code>[[#분류색인]]</code> — 모든 분류를 첫 글자로 묶어 보여 줍니다. 분류 문서가 없는 분류는 빨간 링크로 나옵니다. 세로줄 뒤 숫자로 열 수를 정하며 색인과 같습니다.</li>
+<li><code>[[#외톨이]]</code> — 다른 문서에서 링크하지 않는 문서 목록입니다. 대문과 분류 문서는 빠지고, 별칭으로 건 링크도 연결로 칩니다. 분류에 넣은 것만으로는 연결로 치지 않습니다.</li>
+<li><code>[[#필요한문서]]</code> — 아직 없는데 링크가 걸린 제목을, 링크한 문서가 많은 순서로 보여 줍니다. 누르면 그 제목이 채워진 작성 화면으로 갑니다.</li>
 <li><code>[[#연표]]</code> — 등록된 사건을 키 순서로 늘어놓습니다. <code>[[#연표|G7 역사]]</code>처럼 문서 이름을 적으면 그 문서와 그 문서를 가리키는 문서들의 사건만 모읍니다.</li>
 </ul>
-<p>문서 목록에서는 대문과 지금 보고 있는 문서가 빠집니다. 비밀글과 답글도 나오지 않습니다. 문서가 아주 많으면 일부만 보입니다.</p>
+<p>문서 목록에서는 대문과 지금 보고 있는 문서가 빠집니다. 비밀글과 답글도 나오지 않습니다. 문서가 아주 많으면 일부만 보입니다. 외톨이 문서와 필요한 문서는 보는 사람이 읽을 수 있는 문서의 링크만 세므로, 로그인 여부에 따라 결과가 다를 수 있습니다.</p>
 
 <h2>문서 아래에 자동으로 붙는 것</h2>
 <p>따로 적지 않아도 문서 맨 아래에 다음이 붙습니다.</p>
@@ -154,10 +166,28 @@ HTML;
     {
         return match ($key) {
             self::INDEX => '<p>[[#색인]]</p>',
+            self::CATEGORY_INDEX => '<p>[[#분류색인]]</p>',
+            self::ORPHAN => '<p>[[#외톨이]]</p>',
+            self::WANTED => '<p>[[#필요한문서]]</p>',
             self::SYNTAX => self::SYNTAX_BODY,
-            self::FRONT => self::FRONT_BODY
-                .'<p>[['.self::TITLES[self::INDEX].']] · [['.self::TITLES[self::SYNTAX].']]</p>',
+            self::FRONT => self::FRONT_BODY.self::shortcuts(),
             default => throw new \InvalidArgumentException("알 수 없는 시드: {$key}"),
         };
+    }
+
+    /**
+     * 대문 맨 아래 바로가기 줄 — 대문을 뺀 시드 문서를 만드는 순서대로 잇는다.
+     */
+    private static function shortcuts(): string
+    {
+        $links = [];
+
+        foreach (self::TITLES as $key => $title) {
+            if ($key !== self::FRONT) {
+                $links[] = '[['.$title.']]';
+            }
+        }
+
+        return '<p>'.implode(' · ', $links).'</p>';
     }
 }
