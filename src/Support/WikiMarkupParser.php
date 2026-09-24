@@ -65,6 +65,12 @@ final class WikiMarkupParser
     /** 연표 목록 `[[#연표]]`·`[[#연표|문서명]]` */
     public const PLACEHOLDER_TIMELINE = '연표';
 
+    /** 외톨이 문서 목록 `[[#외톨이]]` — 다른 문서가 링크하지 않는 문서 */
+    public const PLACEHOLDER_ORPHAN = '외톨이';
+
+    /** 필요한 문서 목록 `[[#필요한문서]]` — 링크는 있는데 아직 없는 제목 */
+    public const PLACEHOLDER_WANTED = '필요한문서';
+
     /** 접두어 표기 — `접두어` => `kind` */
     private const PREFIX_KINDS = [
         '분류:' => self::KIND_CATEGORY,
@@ -81,6 +87,8 @@ final class WikiMarkupParser
         self::PLACEHOLDER_TOUR,
         self::PLACEHOLDER_CATEGORY,
         self::PLACEHOLDER_TIMELINE,
+        self::PLACEHOLDER_ORPHAN,
+        self::PLACEHOLDER_WANTED,
     ];
 
     /**

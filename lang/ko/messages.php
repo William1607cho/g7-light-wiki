@@ -13,6 +13,8 @@ return [
         'empty' => '아직 문서가 없습니다.',
         'tour_recent' => '최근 수정',
         'tour_random' => '랜덤 문서',
+        'orphan_empty' => '외톨이 문서가 없습니다.',
+        'wanted_empty' => '필요한 문서가 없습니다.',
     ],
     'doc' => [
         'categories' => '분류',

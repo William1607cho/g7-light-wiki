@@ -8,7 +8,6 @@ use Plugins\G7\Light\Wiki\Support\Placeholders\PlaceholderRenderer;
 use Plugins\G7\Light\Wiki\Support\TitleNormalizer;
 use Plugins\G7\Light\Wiki\Support\WikiBoardSettings;
 use Plugins\G7\Light\Wiki\Support\WikiCategory;
-use Plugins\G7\Light\Wiki\Support\WikiDocLookup;
 use Plugins\G7\Light\Wiki\Support\WikiHtml;
 use Plugins\G7\Light\Wiki\Support\WikiLabels;
 use Plugins\G7\Light\Wiki\Support\WikiMarkupParser;
@@ -33,6 +32,7 @@ use Plugins\G7\Light\Wiki\Support\WikiUrl;
  * | 3 | 역링크 | 읽기 권한이 있고 글·제목이 있을 때 |
  * | 4 | 분류 소속 | 이 문서가 분류 문서이거나 `[[#분류\|…]]` 가 있을 때 (분류가 몇 개든 1회) |
  * | + | 자리표시 목록 | 그 자리표시가 실제로 치환될 때 종류·개수별 1회 ({@see DocLists}) |
+ * | + | 외톨이·필요한 문서 | 둘이 링크 그래프({@see LinkGraph}) 하나를 함께 쓴다 — 비밀글 판정 0~1 + 표기 1 + 판정 최대 2, 그 뒤 목록마다 1 |
  *
  * 4번 결과는 **자동 영역과 자리표시가 함께 쓴다** — 분류 문서 자신의 소속 목록과
  * `[[#분류|…]]` 의 목록이 같은 한 번의 조회에서 나온다.
@@ -74,20 +74,15 @@ final class DocContext
             $categoryTitles[$name] = TitleNormalizer::normalize(WikiCategory::title($name));
         }
 
-        $ask = array_values(array_unique(array_merge(
+        // ── 조회 2: 별칭. 제목으로 못 찾은 링크 대상만 묻는다(분류 제목은 별칭을 보지 않는다).
+        //    두 조회는 {@see LinkTargets} 한 곳에 있다 — 외톨이·필요한 문서 목록도 같은 판정을 쓴다.
+        $targets = LinkTargets::resolve(
+            $target->boardId,
             array_values($normalizedByTarget),
             array_values($categoryTitles),
-        )));
-
-        $found = $ask === [] ? [] : WikiDocLookup::resolve($target->boardId, $ask);
-
-        // ── 조회 2: 별칭. 제목으로 못 찾은 이름만 묻는다.
-        $unresolved = array_values(array_unique(array_filter(
-            array_values($normalizedByTarget),
-            static fn (string $name): bool => ! isset($found[$name])
-        )));
-
-        $alias = $unresolved === [] ? [] : WikiRefQuery::aliasOwners($target->boardId, $unresolved);
+        );
+        $found = $targets->found;
+        $alias = $targets->alias;
 
         self::warnShadowedAliases($target->boardId, $normalizedByTarget, $found);
 
@@ -165,8 +160,10 @@ final class DocContext
         return PlaceholderRenderer::forDoc(
             $target->slug,
             $gate->canRead,
-            new DocLists($target->boardId, $exclude, $members),
+            new DocLists($target->boardId, $exclude, $members, new SecretScope($target->boardId, $target->slug)),
             $labels,
+            $target->boardId,
+            $gate->canWrite,
         );
     }
 

@@ -13,6 +13,8 @@ return [
         'empty' => 'No documents yet.',
         'tour_recent' => 'Recently edited',
         'tour_random' => 'Random documents',
+        'orphan_empty' => 'No orphaned documents.',
+        'wanted_empty' => 'No wanted documents.',
     ],
     'doc' => [
         'categories' => 'Categories',

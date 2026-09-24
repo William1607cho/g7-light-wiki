@@ -350,9 +350,11 @@ final class WikiRefQuery
      * 세기는 서브쿼리로 감싼다 — 이 조회들에는 `GROUP BY` 가 붙어 있어 `count()` 를 그냥
      * 부르면 그룹마다 한 줄씩 돌아온다.
      *
+     * {@see WikiLinkGraphQuery} 도 같은 방식으로 재므로 공개한다.
+     *
      * @return array{items: list<array<string, mixed>>, more: int}
      */
-    private static function limited(Builder $query, int $limit): array
+    public static function limited(Builder $query, int $limit): array
     {
         $limit = max(1, $limit);
 

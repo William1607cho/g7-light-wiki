@@ -31,6 +31,8 @@ final class WikiLabels
         'front.empty',
         'front.tour_recent',
         'front.tour_random',
+        'front.orphan_empty',
+        'front.wanted_empty',
         'doc.categories',
         'doc.category_members',
         'doc.aliases',
@@ -99,6 +101,18 @@ final class WikiLabels
     public function tourRandom(): string
     {
         return $this->get('front.tour_random');
+    }
+
+    /** 외톨이 문서가 없을 때 */
+    public function orphanEmpty(): string
+    {
+        return $this->get('front.orphan_empty');
+    }
+
+    /** 필요한 문서가 없을 때 */
+    public function wantedEmpty(): string
+    {
+        return $this->get('front.wanted_empty');
     }
 
     // ── 자동 영역 문구 ──────────────────────────────────────────────────────

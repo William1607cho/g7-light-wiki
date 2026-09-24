@@ -5,6 +5,7 @@ namespace Plugins\G7\Light\Wiki\Support;
 use Illuminate\Database\Query\Builder;
 use Modules\Sirsoft\Board\Models\Post;
 use Plugins\G7\Light\Wiki\Models\WikiDoc;
+use Plugins\G7\Light\Wiki\Support\Doc\SecretScope;
 use Plugins\G7\Light\Wiki\Models\WikiRef;
 
 /**
@@ -43,11 +44,47 @@ final class WikiVisibility
      */
     public static function apply(Builder $query, string $posts = 'p'): Builder
     {
-        return $query
-            ->whereNull($posts.'.deleted_at')
-            ->where($posts.'.status', 'published')
+        return self::base($query, $posts)
             ->where($posts.'.is_secret', 0)
             ->whereNull($posts.'.parent_id');
+    }
+
+    /**
+     * 같은 조건을 **보는 사람 기준**으로 건다 — 비밀글만 다르다.
+     *
+     * 삭제·비게시·답글은 {@see apply()} 와 같이 누구에게나 뺀다. 비밀글은 `$scope` 가 정한다
+     * (그 판정은 코어 게이트가 한다 — {@see SecretScope}). `[[#외톨이]]`·`[[#필요한문서]]` 만
+     * 쓴다. 기존 목록(역링크·분류 소속·연표·최근·랜덤·색인)은 {@see apply()} 그대로다.
+     *
+     * 붙이는 순서는 `apply()` 와 같다 — 비밀 조건이 `is_secret = 0` 자리에 들어갈 뿐이다.
+     */
+    public static function applyForViewer(Builder $query, SecretScope $scope, string $posts = 'p'): Builder
+    {
+        $base = self::base($query, $posts);
+
+        if (! $scope->all()) {
+            $ids = $scope->postIds();
+
+            $base->where(static function (Builder $secret) use ($posts, $ids): void {
+                $secret->where($posts.'.is_secret', 0);
+
+                if ($ids !== []) {
+                    $secret->orWhereIn($posts.'.id', $ids);
+                }
+            });
+        }
+
+        return $base->whereNull($posts.'.parent_id');
+    }
+
+    /**
+     * 누구에게나 빼는 두 조건 — 지운 글, 게시 상태가 아닌 글.
+     */
+    private static function base(Builder $query, string $posts): Builder
+    {
+        return $query
+            ->whereNull($posts.'.deleted_at')
+            ->where($posts.'.status', 'published');
     }
 
     /** 문서 색인 표 이름 */
